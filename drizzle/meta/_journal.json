@@ -15,6 +15,13 @@
       "when": 1792612219373,
       "tag": "0001_sharp_white_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792613463734,
+      "tag": "0002_wonderful_iron_monger",
+      "breakpoints": true
     }
   ]
 }

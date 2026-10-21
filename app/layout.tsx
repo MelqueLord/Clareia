@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./intelligence.css";
 
 export const metadata: Metadata = {
   title: "Clareia · Finanças no rumo certo",

@@ -1,5 +1,7 @@
 # Clareia — MVP para teste público
 
+> **Atualização v2:** o estado atual e as limitações atualizadas estão em `EVOLUCAO_V2.md`. A descrição abaixo registra o escopo original da versão 1.
+
 ## Uso
 
 PWA em português, com interface adaptada ao celular e ao computador. Há dois usuários fictícios com autenticação no servidor:

@@ -1,3 +1,17 @@
+# Clareia · Finanças PF e MEI
+
+PWA com projeções financeiras, alertas explicados, registro por voz e comparação de compras.
+
+- Aplicativo: https://clareia-financas-mei-pf.igrejamirc01.chatgpt.site
+- Escopo atual: [Evolução v2](EVOLUCAO_V2.md).
+- Usuários fictícios: pf@teste.clareia.app e mei@teste.clareia.app, senha pública Clareia2026!. Use somente dados fictícios nessas contas compartilhadas.
+- Login individual: botão de entrada com ChatGPT, gerenciado pela hospedagem.
+- Testes: node tests/run.cjs
+- Desenvolvimento: npm run dev
+- Build: npm run build
+
+## Infraestrutura do projeto
+
 # vinext-starter
 
 A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
