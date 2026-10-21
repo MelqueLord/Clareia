@@ -1,0 +1,15 @@
+import { z } from 'zod';
+const text=z.string().trim().min(1).max(180), key=z.string().min(1).max(80), space=z.enum(['pf','mei']);
+const amount=z.number().int().min(1).max(100000000000), nonnegative=z.number().int().min(0).max(100000000000);
+const date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(s=>!isNaN(Date.parse(s))&&new Date(s).toISOString().slice(0,10)===s,'Data inválida');
+const account=z.object({id:key,name:text,bank:text,space,balance:z.number().int().min(-100000000000).max(100000000000),openingDate:date});
+const card=z.object({id:key,name:text,space,accountId:key,limit:amount,closingDay:z.number().int().min(1).max(28),dueDay:z.number().int().min(1).max(28)});
+const transaction=z.object({id:key,description:text,amount,type:z.enum(['expense','income','transfer','refund','card_payment']),category:text,date,dueDate:date,paid:z.boolean(),estimated:z.boolean(),accountId:key,toAccountId:z.string().max(80),cardId:z.string().max(80),space,installments:z.number().int().min(1).max(36),recurring:z.boolean(),source:z.enum(['manual','voice']),createdAt:z.string().max(40)});
+const pref=z.object({floor:nonnegative.nullable(),complete:z.boolean(),checkedOn:z.union([date,z.literal('')])});
+export const dataSchema=z.object({configured:z.boolean(),accounts:z.array(account).max(100),cards:z.array(card).max(100),transactions:z.array(transaction).max(10000),budgets:z.array(z.object({id:key,space,category:text,limit:amount})).max(100),preferences:z.object({pf:pref,mei:pref}),dismissed:z.array(z.string().max(200)).max(200)}).superRefine((d,ctx)=>{
+ const fail=(m:string)=>ctx.addIssue({code:z.ZodIssueCode.custom,message:m});
+ for(const list of [d.accounts,d.cards,d.transactions,d.budgets])if(new Set(list.map(x=>x.id)).size!==list.length)fail('Identificadores repetidos.');
+ for(const c of d.cards)if(!d.accounts.some(a=>a.id===c.accountId&&a.space===c.space))fail('Conta do cartão inválida.');
+ for(const t of d.transactions){if(!d.accounts.some(a=>a.id===t.accountId&&a.space===t.space))fail('Conta do lançamento inválida.');if(t.cardId&&!d.cards.some(c=>c.id===t.cardId&&c.space===t.space&&c.accountId===t.accountId))fail('Cartão inválido.');if(t.type==='transfer'&&(!d.accounts.some(a=>a.id===t.toAccountId)||t.accountId===t.toAccountId))fail('Destino da transferência inválido.');if(t.type==='card_payment'&&!t.cardId)fail('Pagamento exige cartão.');if(t.cardId&&t.recurring)fail('Recorrência no cartão não é suportada neste MVP.');if(t.estimated&&(t.paid||t.type!=='income'))fail('Estimativa só pode ser receita pendente.');if(!t.cardId&&t.installments!==1)fail('Parcelas exigem cartão.');if(t.cardId&&!['expense','refund','card_payment'].includes(t.type))fail('Tipo inválido para cartão.');}
+});
+export const saveSchema=z.object({data:dataSchema,revision:z.number().int().min(0),mutationId:z.string().uuid(),action:z.enum(['setup','transaction','delete_transaction','account','card','budget','settings','dismiss','restore'])});
