@@ -131,6 +131,13 @@
 .advanced-entry>label{margin:11px 0}
 .advanced-entry .midmonth-note{font-size:10px}
 .quick-submit{min-height:47px;margin-top:12px}
+.voice-review-summary{margin:0 0 15px;padding:14px;border:1px solid #dce8d8;border-radius:12px;background:#f5f9f2;text-align:left}
+.voice-review-heading{display:flex;align-items:center;gap:8px;color:#426d50;font-size:12px}
+.voice-review-heading span{margin-left:auto;color:#82907d;font-size:10px;font-weight:450}
+.voice-review-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.voice-review-tags span{padding:5px 8px;border:1px solid #e1e9dc;border-radius:99px;background:white;color:#526b55;font-size:10px}
+.voice-review-summary ul{display:grid;gap:5px;margin:10px 0 0;padding-left:17px;color:#846c43;font-size:10px;line-height:1.5}
+.voice-review-summary>small{display:block;margin-top:9px;color:#71816e;font-size:10px;line-height:1.5}
 @media(max-width:720px){.quick-type-switch button{min-height:46px}.quick-entry>label{margin:11px 0}.quick-settlement label{min-height:42px}.advanced-entry{padding-top:12px}}
 .guided-footnote{margin-top:16px;padding-top:12px;border-top:1px solid #e6ece3;font-size:10px;color:#929d8e}
 .guided-refine-link{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:0;color:#4c775a;font-size:11px;font-weight:600}

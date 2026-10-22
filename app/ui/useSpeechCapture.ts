@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type SpeechResult = { transcript?: string };
+type SpeechResultGroup = ArrayLike<SpeechResult> & { isFinal?: boolean };
 type SpeechLike = {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
-  onresult: ((event: { results?: ArrayLike<ArrayLike<SpeechResult>> }) => void) | null;
+  onresult: ((event: { results?: ArrayLike<SpeechResultGroup> }) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
   start: () => void;
@@ -39,6 +40,7 @@ export default function useSpeechCapture(onTranscript: (text: string) => void) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const session = useRef(0);
   const transcriptCallback = useRef(onTranscript);
+  const transcriptSegments = useRef<string[]>([]);
 
   useEffect(() => {
     transcriptCallback.current = onTranscript;
@@ -145,10 +147,18 @@ export default function useSpeechCapture(onTranscript: (text: string) => void) {
     recognition.current = instance;
     instance.lang = 'pt-BR';
     instance.continuous = false;
-    instance.interimResults = false;
+    instance.interimResults = true;
+    transcriptSegments.current = [];
     instance.onresult = event => {
       if (session.current !== token) return;
-      const transcript = event.results?.[0]?.[0]?.transcript?.trim();
+      const groups = event.results;
+      if (!groups?.length) return;
+      for (let index = 0; index < groups.length; index++) {
+        const group = groups[index];
+        const transcript = group?.[0]?.transcript?.trim();
+        transcriptSegments.current[index] = transcript || '';
+      }
+      const transcript = transcriptSegments.current.filter(Boolean).join(' ').trim();
       if (transcript) transcriptCallback.current(transcript);
     };
     instance.onerror = event => {

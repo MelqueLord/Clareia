@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ArrowDown, ArrowRight, Mic } from 'lucide-react';
 import type { FinanceData, InvestmentPlan, Kind, Space, Transaction } from '../../lib/model';
 import { categoriesFor, cents, firstCardDue, id } from '../../lib/model';
-import { parseVoice } from '../../lib/voice';
+import { parseVoice, type VoiceDraft } from '../../lib/voice';
 import MoneyInput from './MoneyInput';
 
 const investmentTypes = ['Poupança', 'CDB ou RDB', 'Tesouro Direto', 'Fundos de investimento', 'Ações ou ETFs', 'Criptoativos'];
@@ -21,7 +21,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   space: Space;
   asOf: string;
   tx: Transaction | null;
-  voice: ReturnType<typeof parseVoice> | null;
+  voice: VoiceDraft | null;
   initialType: Kind | null;
   initialGoalId?: string | null;
   saving: boolean;
@@ -34,16 +34,16 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const firstIncomeCategory = categoriesFor(selectedSpace, 'income')[0] || 'Outros';
   const incomeAccounts = data.accounts.filter(account => account.space === selectedSpace);
   const isSpecialType = !['expense', 'income'].includes(type);
-  const [showAdvanced, setShowAdvanced] = useState(!!tx || !!voice || (!!initialType && !['expense', 'income'].includes(initialType)));
+  const [showAdvanced, setShowAdvanced] = useState(!!tx || (!!voice && !['expense', 'income'].includes(voice.type)) || (!!initialType && !['expense', 'income'].includes(initialType)));
   const [description, setDescription] = useState(tx?.description || voice?.description || '');
   const [category, setCategory] = useState(tx?.category || voice?.category || ((voice?.type || initialType) === 'income' ? firstIncomeCategory : 'Outros'));
   const [categoryTouched, setCategoryTouched] = useState(!!tx || !!voice);
   const [goalId, setGoalId] = useState(tx?.goalId || voice?.goalId || initialGoalId || '');
   const [cardId, setCardId] = useState(tx?.cardId || voice?.cardId || '');
-  const [accountId, setAccountId] = useState(tx?.accountId || voice?.accountId || incomeAccounts[0]?.id || '');
-  const [date, setDate] = useState(tx?.date || voice?.date || (voice ? '' : asOf));
-  const [due, setDue] = useState(tx?.dueDate || (voice?.type === 'card_payment' && voice.date ? voice.date : voice?.cardId && voice.date ? firstCardDue(voice.date, data.cards.find(card => card.id === voice.cardId)!) : voice?.date) || (voice || initialType === 'card_debt' ? '' : asOf));
-  const [paid, setPaid] = useState(tx?.paid ?? true);
+  const [accountId, setAccountId] = useState(tx?.accountId || voice?.accountId || (!voice && incomeAccounts.length === 1 ? incomeAccounts[0].id : ''));
+  const [date, setDate] = useState(tx?.date || voice?.date || asOf);
+  const [due, setDue] = useState(tx?.dueDate || voice?.dueDate || (voice?.type === 'card_payment' && voice.date ? voice.date : voice?.cardId && voice.date ? firstCardDue(voice.date, data.cards.find(card => card.id === voice.cardId)!) : voice?.date) || (initialType === 'card_debt' ? '' : asOf));
+  const [paid, setPaid] = useState(tx?.paid ?? (voice ? voice.statusInferred ? voice.paid : false : true));
   const [estimated, setEstimated] = useState(tx?.estimated || false);
   const [amountText, setAmountText] = useState(tx ? String(tx.amount / 100) : voice?.amount ? String(voice.amount / 100) : '');
   const [investmentEnabled, setInvestmentEnabled] = useState((tx?.investmentAmount || 0) > 0 || (!tx && (voice?.type || initialType || type) === 'income' && !!(data.investmentPlans || []).find(plan => plan.space === selectedSpace && plan.incomeCategory === category)));
@@ -147,7 +147,12 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     if (investmentTypeChoice === 'Outro' && investmentEnabled && type === 'income' && !customInvestmentType.trim()) { setMessage('Informe o tipo de investimento ou escolha outra opção.'); return; }
     onSave(transaction);
   }}>
-    {voice && <div className="notice"><Mic size={17}/>Revise os dados antes de salvar.</div>}
+    {voice && <div className="voice-review-summary">
+      <div className="voice-review-heading"><Mic size={16}/><strong>Entendi assim</strong><span>Confira antes de salvar</span></div>
+      <div className="voice-review-tags"><span>{type === 'income' ? 'Receita' : type === 'card_debt' ? 'Parcelas' : type === 'card_payment' ? 'Fatura' : type === 'transfer' ? 'Transferência' : type === 'reserve' ? 'Reserva' : type === 'release' ? 'Resgate' : type === 'refund' ? 'Reembolso' : 'Despesa'}</span><span>{category}</span><span>{date.split('-').reverse().join('/')}{voice.dateWasInferred ? ' · hoje por padrão' : ''}</span>{voice.dueDate && voice.dueDate !== date && <span>Vence {voice.dueDate.split('-').reverse().join('/')}</span>}{voice.amount !== null && <span>R$ {(voice.amount / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}{accountId && <span>{data.accounts.find(account => account.id === accountId)?.bank} · {data.accounts.find(account => account.id === accountId)?.name}</span>}{cardId && <span>{data.cards.find(item => item.id === cardId)?.name}</span>}</div>
+      {voice.reviewHints.length > 0 && <ul>{voice.reviewHints.map(hint => <li key={hint}>{hint}</li>)}</ul>}
+      {!voice.reviewHints.length && <small>Revise descrição, valor e situação. Nenhum registro é salvo sem sua confirmação.</small>}
+    </div>}
     <section className="quick-entry">
       <p className="quick-entry-kicker">{selectedSpace === 'mei' ? 'Lançamento do MEI' : 'Lançamento pessoal'}</p>
       <div className="quick-type-switch" aria-label="Tipo de lançamento">
