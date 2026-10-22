@@ -11,7 +11,8 @@ export function parseVoice(text:string,data:FinanceData,currentSpace:Space,asOf:
  const accounts=data.accounts.filter(a=>a.space===space&&[a.name,a.bank].some(n=>n.length>2&&s.includes(normalize(n))));
  const cards=/cartao/.test(s)?data.cards.filter(c=>c.space===space&&s.includes(normalize(c.name))):[];
  const card=cards.length===1?cards[0]:undefined;const account=card?data.accounts.find(a=>a.id===card.accountId):accounts.length===1?accounts[0]:undefined;
- return {amount,space,type,date,category,description:text.slice(0,180),accountId:account?.id||'',cardId:card?.id||'',installments:Number(s.match(/(?:em\s+)?(\d+)\s*(?:vezes|parcelas)/)?.[1]||1),needsReview:true};
+ const goal=(data.savingsGoals||[]).find(g=>g.space===space&&s.includes(normalize(g.name)));
+ return {amount,space,type,date,category,description:text.slice(0,180),accountId:account?.id||'',cardId:card?.id||'',installments:Number(s.match(/(?:em\s+)?(\d+)\s*(?:vezes|parcelas)/)?.[1]||1),needsReview:true,goalId:['reserve','release'].includes(type)?goal?.id:undefined};
 }
 
 export function parseVoiceBatch(text:string,data:FinanceData,space:Space,asOf:string){

@@ -2,12 +2,13 @@ export type Space = 'pf' | 'mei';
 export type Kind = 'expense' | 'income' | 'transfer' | 'refund' | 'card_payment' | 'reserve' | 'release';
 export type Account = { id:string; name:string; bank:string; space:Space; balance:number; openingDate:string };
 export type Card = { id:string; name:string; space:Space; accountId:string; limit:number; closingDay:number; dueDay:number };
-export type Transaction = { id:string; description:string; amount:number; type:Kind; category:string; date:string; dueDate:string; paid:boolean; estimated:boolean; accountId:string; toAccountId:string; cardId:string; space:Space; installments:number; recurring:boolean; source:'manual'|'voice'; createdAt:string };
+export type Transaction = { id:string; description:string; amount:number; type:Kind; category:string; date:string; dueDate:string; paid:boolean; estimated:boolean; accountId:string; toAccountId:string; cardId:string; space:Space; installments:number; recurring:boolean; source:'manual'|'voice'; createdAt:string; goalId?:string };
 export type Budget = { id:string; space:Space; category:string; limit:number };
+export type SavingsGoal = { id:string; space:Space; name:string; target:number; targetDate:string };
 export type Preferences = { floor:number|null; complete:boolean; checkedOn:string; essentials?:{category:string;monthly:number}[]; essentialsReviewed?:boolean };
 export type PersonalProfile = { incomeSource:string; monthlyIncomeTarget:number|null; dependents:number };
 export type BusinessProfile = { tradeName:string; cnpj:string; activity:string; city:string; monthlyRevenueTarget:number|null; monthlyDas:number|null; dasDueDay:number|null; proLabore:number|null };
-export type FinanceData = { configured:boolean; accounts:Account[]; cards:Card[]; transactions:Transaction[]; budgets:Budget[]; preferences:Record<Space,Preferences>; profiles:{pf:PersonalProfile;mei:BusinessProfile}; dismissed:string[] };
+export type FinanceData = { configured:boolean; accounts:Account[]; cards:Card[]; transactions:Transaction[]; budgets:Budget[]; savingsGoals?:SavingsGoal[]; preferences:Record<Space,Preferences>; profiles:{pf:PersonalProfile;mei:BusinessProfile}; dismissed:string[] };
 export const personalIncomeCategories = ['Salário','Benefícios','Renda extra','Rendimentos','Outros'];
 export const personalExpenseCategories = ['Alimentação','Moradia','Transporte','Saúde','Educação','Lazer','Compras','Assinaturas','Serviços','Impostos','Outros'];
 export const businessIncomeCategories = ['Serviços prestados','Venda de produtos','Reembolso recebido','Outros'];
@@ -15,7 +16,7 @@ export const businessExpenseCategories = ['Materiais e insumos','Fornecedores','
 export const categories = [...new Set([...personalIncomeCategories,...personalExpenseCategories,...businessIncomeCategories,...businessExpenseCategories])];
 export function categoriesFor(space:Space,kind:'income'|'expense'|'all'='all'):string[]{const list=space==='mei'?[...businessIncomeCategories,...businessExpenseCategories]:[...personalIncomeCategories,...personalExpenseCategories];return kind==='all'?list:space==='mei'?(kind==='income'?businessIncomeCategories:businessExpenseCategories):(kind==='income'?personalIncomeCategories:personalExpenseCategories);}
 export const id = () => crypto.randomUUID();
-export function emptyData(): FinanceData { return {configured:false,accounts:[],cards:[],transactions:[],budgets:[],preferences:{pf:{floor:null,complete:false,checkedOn:''},mei:{floor:null,complete:false,checkedOn:''}},profiles:{pf:{incomeSource:'',monthlyIncomeTarget:null,dependents:0},mei:{tradeName:'',cnpj:'',activity:'',city:'',monthlyRevenueTarget:null,monthlyDas:null,dasDueDay:null,proLabore:null}},dismissed:[]}; }
+export function emptyData(): FinanceData { return {configured:false,accounts:[],cards:[],transactions:[],budgets:[],savingsGoals:[],preferences:{pf:{floor:null,complete:false,checkedOn:''},mei:{floor:null,complete:false,checkedOn:''}},profiles:{pf:{incomeSource:'',monthlyIncomeTarget:null,dependents:0},mei:{tradeName:'',cnpj:'',activity:'',city:'',monthlyRevenueTarget:null,monthlyDas:null,dasDueDay:null,proLabore:null}},dismissed:[]}; }
 export const money = (cents:number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
 export function cents(input:string):number { const s=input.replace(/[^0-9,.-]/g,''); const normalized=s.includes(',')?s.replace(/\./g,'').replace(',','.'):s; return Math.round(Number(normalized)*100); }
 export function today():string { return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bahia',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
