@@ -23,3 +23,4 @@
 .profile-separator small{font-size:10px;color:var(--muted);margin-top:4px}
 @media(max-width:720px){.business-identity{align-items:flex-start;flex-direction:column;margin:0 0 16px;padding:15px}.business-identity .button{width:100%}.profile-panel form,.profile-panel form>.form-grid{display:block}.profile-panel{grid-column:auto}}
 
+.access-chip{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid #dce6d9;border-radius:14px;background:#f1f5eb;color:var(--green-dark);font-size:11px;font-weight:650}.access-chip svg{color:#78946d}@media(max-width:720px){.access-chip{padding:8px 10px;border-radius:20px;font-size:10px}.access-chip svg{display:none}}
