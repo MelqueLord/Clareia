@@ -4,10 +4,12 @@ import { FormEvent, useState } from 'react';
 import { ArrowRight, ArrowUpRight, Building2, Check, Compass, Eye, EyeOff, LockKeyhole, Sparkles, Wallet } from 'lucide-react';
 import { authClient } from '../../lib/auth-client';
 import type { Space } from '../../lib/model';
+import InstallAppCard from './InstallAppCard';
 
 type Mode = 'login' | 'signup';
+type InstallPrompt = { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }> };
 
-export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
+export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: { onLogin: () => void; installPrompt: InstallPrompt | null; onInstallUsed: () => void }) {
   const [profile, setProfile] = useState<Space>('pf');
   const [mode, setMode] = useState<Mode>('login');
   const [name, setName] = useState('');
@@ -128,6 +130,7 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
           <p className="test-password">Senha de demonstração: <strong>Clareia2026!</strong></p>
         </details>
       </div>
+      <InstallAppCard prompt={installPrompt} onPromptUsed={onInstallUsed} variant="login"/>
       <p className="login-bottom">Clareza para escolher. Espaço para viver.</p>
     </section>
   </div>;

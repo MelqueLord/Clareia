@@ -47,4 +47,16 @@
 .guided-refine-link{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:0;color:#4c775a;font-size:11px;font-weight:600}
 .guided-refine-link:hover{text-decoration:underline}
 .listening-button{color:#a2563c!important;border-color:#eacfc3!important}
+.install-app-card{margin:16px 0;padding:15px;border:1px solid #e0e9dc;border-radius:13px;background:#f6f9f3}
+.install-app-settings{padding:15px 0 2px;border:0;border-radius:0;background:transparent}
+.install-app-heading{display:flex;align-items:flex-start;gap:12px}
+.install-app-heading>div{min-width:0;flex:1}
+.install-app-heading h3{margin:2px 0 5px;font-size:13px;color:var(--ink)}
+.install-app-heading p,.install-app-help{margin:0;color:var(--muted);font-size:11px;line-height:1.55}
+.install-app-icon{width:36px;height:36px;display:grid;place-items:center;flex-shrink:0;border-radius:10px;background:#e5efe2;color:#286449}
+.install-app-button{margin-top:12px;min-height:38px;font-size:11px}
+.install-app-steps{display:grid;gap:6px;margin:12px 0 0;padding-left:19px;color:#68776b;font-size:11px;line-height:1.55}
+.install-app-steps li svg{display:inline;vertical-align:-3px;color:#286449}
+.install-app-steps strong,.install-app-help strong{color:#315a44}
+.install-app-message{margin:10px 0 0;color:#356348;font-size:11px}
 @media(max-width:780px){.first-password-card{padding:28px 22px}.first-password-brand{margin-bottom:30px}.guided-setup{padding:20px 17px}.guided-heading h2{font-size:17px}.guided-checklist{grid-template-columns:repeat(2,minmax(0,1fr))}.guided-current-step{padding:16px 13px}.guided-fields{grid-template-columns:1fr;gap:0}.guided-ready{flex-wrap:wrap}.guided-ready>.button{width:100%}}
