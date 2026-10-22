@@ -36,7 +36,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const [cardId, setCardId] = useState(tx?.cardId || voice?.cardId || '');
   const [accountId, setAccountId] = useState(tx?.accountId || voice?.accountId || '');
   const [date, setDate] = useState(tx?.date || voice?.date || (voice ? '' : asOf));
-  const [due, setDue] = useState(tx?.dueDate || (voice?.cardId && voice.date ? firstCardDue(voice.date, data.cards.find(card => card.id === voice.cardId)!) : voice?.date) || (voice ? '' : asOf));
+  const [due, setDue] = useState(tx?.dueDate || (voice?.type === 'card_payment' && voice.date ? voice.date : voice?.cardId && voice.date ? firstCardDue(voice.date, data.cards.find(card => card.id === voice.cardId)!) : voice?.date) || (voice || initialType === 'card_debt' ? '' : asOf));
   const [paid, setPaid] = useState(tx?.paid ?? true);
   const [estimated, setEstimated] = useState(tx?.estimated || false);
   const [amountText, setAmountText] = useState(tx ? String(tx.amount / 100) : voice?.amount ? String(voice.amount / 100) : '');
@@ -64,6 +64,9 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   }
 
   function chooseType(nextType: Kind) {
+    if (type === 'card_debt' && nextType !== 'card_debt') setPaid(true);
+    if (nextType === 'card_debt') setDue('');
+    else if (type === 'card_debt') setDue(asOf);
     setType(nextType);
     setCardId('');
     const options = categoriesFor(selectedSpace, nextType === 'income' ? 'income' : 'expense');
@@ -79,6 +82,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       setCustomInvestmentType(savedType && !investmentTypes.includes(savedType) ? savedType : '');
     } else {
       setInvestmentEnabled(false);
+      if (nextType === 'card_debt') { setPaid(false); setEstimated(false); }
     }
     setInvestmentTouched(false);
   }
@@ -105,15 +109,15 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       type,
       category: String(form.get('category')),
       date,
-      dueDate: due,
-      paid: cardId && type !== 'card_payment' ? false : paid,
+      dueDate: type === 'card_payment' ? date : due,
+      paid: type === 'card_debt' || cardId && type !== 'card_payment' ? false : paid,
       estimated: type === 'income' && estimated,
       accountId: card?.accountId || accountId,
       toAccountId: type === 'transfer' ? String(form.get('toAccount')) : '',
       cardId,
       space: selectedSpace,
       installments: cardId && type !== 'card_payment' ? Number(form.get('installments')) || 1 : 1,
-      recurring: !cardId && form.get('recurring') === 'on',
+      recurring: type !== 'card_debt' && !cardId && form.get('recurring') === 'on',
       source: voice ? 'voice' : tx?.source || 'manual',
       createdAt: tx?.createdAt || new Date().toISOString(),
       goalId: ['reserve', 'release'].includes(type) && goalId ? goalId : undefined,
@@ -122,30 +126,33 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       sourceIncomeId: type === 'reserve' ? tx?.sourceIncomeId : undefined,
     };
     if (!transaction.amount || transaction.amount < 0) { setMessage('Informe um valor maior que zero.'); return; }
-    if (transaction.paid && due > asOf) { setMessage('Uma movimentação futura deve ficar como pendente.'); return; }
+    if (transaction.paid && transaction.dueDate > asOf) { setMessage('Uma movimentação futura deve ficar como pendente.'); return; }
     if (investmentEnabled && type === 'income' && (!Number.isSafeInteger(investmentValue) || !investmentValue)) { setMessage('Informe quanto pretende separar ou desmarque a opção de investimento.'); return; }
     if (investmentValue !== undefined && investmentValue > transaction.amount) { setMessage('O valor separado não pode ser maior que esta receita.'); return; }
     if (investmentTypeChoice === 'Outro' && investmentEnabled && type === 'income' && !customInvestmentType.trim()) { setMessage('Informe o tipo de investimento ou escolha outra opção.'); return; }
     onSave(transaction);
   }}>
     {voice && <div className="notice"><Mic size={17}/>Revise todos os campos. Nada foi salvo ainda.</div>}
+    {type !== 'card_debt' && <div className="notice midmonth-note"><strong>Começando no meio do mês?</strong><span>Use as datas reais. Marque “Já recebi” para salários que entraram e “Já paguei” para contas quitadas; assim, o histórico fica correto sem projetar esses pagamentos de novo.</span></div>}
     <div className="form-grid">
-      <label>{selectedSpace === 'mei' ? 'Movimento do negócio' : 'Movimento pessoal'}<select value={type} onChange={event => chooseType(event.target.value as Kind)}><option value="expense">Despesa</option><option value="income">Receita</option><option value="transfer">Transferência</option><option value="refund">Estorno / reembolso</option><option value="reserve">Separar para reserva</option><option value="release">Liberar valor separado</option>{tx?.type === 'card_payment' && <option value="card_payment">Pagamento de fatura</option>}</select></label>
+      <label>{selectedSpace === 'mei' ? 'Movimento do negócio' : 'Movimento pessoal'}<select value={type} onChange={event => chooseType(event.target.value as Kind)}><option value="expense">Despesa</option><option value="income">Receita</option><option value="card_debt">Parcelas de cartão que já faltam pagar</option><option value="transfer">Transferência</option><option value="refund">Estorno / reembolso</option><option value="reserve">Separar para reserva</option><option value="release">Liberar valor separado</option>{(tx?.type === 'card_payment' || initialType === 'card_payment' || voice?.type === 'card_payment') && <option value="card_payment">Pagamento de fatura</option>}</select></label>
       <p className="muted small-text">Lançamento em {selectedSpace === 'mei' ? 'Meu MEI' : 'Pessoal'}</p>
     </div>
-    <label>{type === 'income' && selectedSpace === 'pf' ? 'Salário ou outra renda — descreva qual' : selectedSpace === 'mei' && type === 'income' ? 'Cliente, serviço ou venda' : selectedSpace === 'mei' ? 'Fornecedor, custo ou DAS' : 'Descrição'}<input required name="description" defaultValue={tx?.description || voice?.description || ''} placeholder={type === 'income' && selectedSpace === 'pf' ? 'Ex.: salário da empresa, aluguel, renda extra' : selectedSpace === 'mei' ? 'Ex.: Cliente, insumos ou DAS' : 'Ex.: Mercado da semana'} maxLength={180}/></label>
-    <div className="form-grid"><label>Valor total (R$)<input required name="amount" inputMode="decimal" value={amountText} onChange={event => changeAmount(event.target.value)} placeholder="0,00"/></label><label>{type === 'income' ? 'Tipo de receita' : 'Categoria'}<select name="category" value={category} onChange={event => chooseCategory(event.target.value)}>{[...new Set([tx?.category || voice?.category || 'Outros', ...categoriesFor(selectedSpace, type === 'income' ? 'income' : 'expense')])].map(item => <option key={item}>{item}</option>)}</select></label></div>
+    <label>{type === 'card_debt' ? 'Nome da compra parcelada' : type === 'income' && selectedSpace === 'pf' ? 'Salário ou outra renda — descreva qual' : selectedSpace === 'mei' && type === 'income' ? 'Cliente, serviço ou venda' : selectedSpace === 'mei' ? 'Fornecedor, custo ou DAS' : 'Descrição'}<input required name="description" defaultValue={tx?.description || voice?.description || ''} placeholder={type === 'card_debt' ? 'Ex.: celular, geladeira, curso' : type === 'income' && selectedSpace === 'pf' ? 'Ex.: salário da empresa, aluguel, renda extra' : selectedSpace === 'mei' ? 'Ex.: Cliente, insumos ou DAS' : 'Ex.: Mercado da semana'} maxLength={180}/></label>
+    <div className="form-grid"><label>{type === 'card_debt' ? 'Saldo que ainda falta pagar (R$)' : 'Valor total (R$)'}<input required name="amount" inputMode="decimal" value={amountText} onChange={event => changeAmount(event.target.value)} placeholder="0,00"/></label><label>{type === 'income' ? 'Tipo de receita' : 'Categoria'}<select name="category" value={category} onChange={event => chooseCategory(event.target.value)}>{[...new Set([tx?.category || voice?.category || 'Outros', ...categoriesFor(selectedSpace, type === 'income' ? 'income' : 'expense')])].map(item => <option key={item}>{item}</option>)}</select></label></div>
+    {type === 'card_debt' && <div className="notice card-debt-note"><strong>Inclua somente o que ainda falta pagar.</strong><span>Informe uma dívida por compra, o número de parcelas restantes e a data do próximo vencimento. O Clareia distribui o saldo entre elas.</span></div>}
     {(type === 'reserve' || type === 'release') && <label>Associar a uma meta<select value={goalId} onChange={event => setGoalId(event.target.value)}><option value="">Reserva geral, sem meta</option>{(data.savingsGoals || []).filter(goal => goal.space === selectedSpace).map(goal => <option key={goal.id} value={goal.id}>{goal.name}</option>)}</select><small className="muted">Só valores separados vinculados à meta aparecem no progresso.</small></label>}
-    <div className="form-grid"><label>Data da movimentação<input required type="date" value={date} onChange={event => { setDate(event.target.value); setDue(card ? firstCardDue(event.target.value, card) : event.target.value); }}/></label><label>{cardId ? 'Vencimento da 1ª parcela' : 'Pagamento / vencimento'}<input required type="date" value={due} onChange={event => setDue(event.target.value)}/></label></div>
+    <div className={type === 'card_payment' ? '' : 'form-grid'}><label>{type === 'card_debt' ? 'Data em que está cadastrando' : type === 'card_payment' ? 'Data do pagamento' : 'Data da movimentação'}<input required type="date" value={date} onChange={event => { setDate(event.target.value); if (type !== 'card_debt' && type !== 'card_payment') setDue(card ? firstCardDue(event.target.value, card) : event.target.value); }}/></label>{type !== 'card_payment' && <label>{type === 'card_debt' ? 'Próximo vencimento' : cardId ? 'Vencimento da 1ª parcela' : 'Pagamento / vencimento'}<input required type="date" value={due} onChange={event => setDue(event.target.value)}/></label>}</div>
     {type === 'income' && !incomeAccounts.length && <div className="notice income-account-notice">Cadastre primeiro uma conta para indicar onde esta renda entrou.<button type="button" className="text-link" onClick={onNeedAccount}>Cadastrar conta e banco <ArrowRight size={14}/></button></div>}
-    <label>{type === 'income' ? 'Onde este valor entrou?' : 'Conta'}<select required value={card?.accountId || accountId} disabled={!!card} onChange={event => setAccountId(event.target.value)}><option value="">Selecione a conta</option>{incomeAccounts.map(account => <option key={account.id} value={account.id}>{account.name} · {account.bank}</option>)}</select>{type === 'income' && <small className="muted">Escolha a conta de recebimento. O banco aparece junto do nome.</small>}</label>
-    {(type === 'expense' || type === 'refund' || type === 'card_payment') && <label>Forma de pagamento<select value={cardId} onChange={event => { setCardId(event.target.value); const selectedCard = data.cards.find(item => item.id === event.target.value); if (selectedCard) { setAccountId(selectedCard.accountId); if (date) setDue(firstCardDue(date, selectedCard)); } }}><option value="">Débito / Pix / dinheiro</option>{data.cards.filter(item => item.space === selectedSpace).map(item => <option key={item.id} value={item.id}>Cartão · {item.name}</option>)}</select></label>}
+    <label>{type === 'income' ? 'Onde este valor entrou?' : type === 'card_debt' ? 'Conta do banco vinculado' : 'Conta'}<select required value={card?.accountId || accountId} disabled={!!card} onChange={event => setAccountId(event.target.value)}><option value="">Selecione a conta</option>{incomeAccounts.map(account => <option key={account.id} value={account.id}>{account.name} · {account.bank}</option>)}</select>{type === 'income' && <small className="muted">Escolha a conta de recebimento. O banco aparece junto do nome.</small>}</label>
+    {(type === 'expense' || type === 'refund' || type === 'card_payment' || type === 'card_debt') && <label>{type === 'card_debt' ? 'Cartão e banco da dívida' : 'Forma de pagamento'}<select value={cardId} onChange={event => { setCardId(event.target.value); const selectedCard = data.cards.find(item => item.id === event.target.value); if (selectedCard) { setAccountId(selectedCard.accountId); if (date && ['expense', 'refund'].includes(type)) setDue(firstCardDue(date, selectedCard)); } }}><option value="">{type === 'card_debt' ? 'Selecione o cartão' : 'Débito / Pix / dinheiro'}</option>{data.cards.filter(item => item.space === selectedSpace).map(item => { const account = data.accounts.find(account => account.id === item.accountId); return <option key={item.id} value={item.id}>{item.name} · {account?.bank || 'Banco'} · {account?.name || 'Conta'}</option>; })}</select></label>}
+    {type === 'card_debt' && !data.cards.some(item => item.space === selectedSpace) && <div className="notice income-account-notice">Cadastre primeiro a conta e o cartão do banco que tem as parcelas.<button type="button" className="text-link" onClick={onNeedAccount}>Cadastrar conta e cartão <ArrowRight size={14}/></button></div>}
     {type === 'transfer' && <label>Conta de destino<select name="toAccount" required defaultValue={tx?.toAccountId || ''}><option value="">Selecione</option>{data.accounts.filter(account => account.space === selectedSpace && account.id !== accountId).map(account => <option key={account.id} value={account.id}>{account.name} · {account.bank}</option>)}<option value={selectedSpace === 'mei' ? 'external:pf' : 'external:mei'}>Conta {selectedSpace === 'mei' ? 'pessoal' : 'do MEI'} em outro acesso</option></select></label>}
-    {cardId && type !== 'card_payment' && <label>Número de parcelas<input name="installments" type="number" min="1" max="36" defaultValue={tx?.installments || voice?.installments || 1}/></label>}
-    {(!cardId || type === 'card_payment') && <>
-      <label className="checkbox"><input type="checkbox" checked={paid} onChange={event => { setPaid(event.target.checked); if (event.target.checked) setEstimated(false); }}/>{['reserve', 'release'].includes(type) ? 'Confirmo esta alteração no valor separado' : <>Já {type === 'income' ? 'recebi' : 'paguei'} este valor</>}</label>
+    {cardId && type !== 'card_payment' && <label>{type === 'card_debt' ? 'Parcelas que ainda faltam' : 'Número de parcelas'}<input name="installments" type="number" min="1" max="36" defaultValue={tx?.installments || voice?.installments || 1}/></label>}
+    {(!cardId || type === 'card_payment') && type !== 'card_debt' && <>
+      {['reserve', 'release'].includes(type) ? <label className="checkbox"><input type="checkbox" checked={paid} onChange={event => setPaid(event.target.checked)}/>Confirmo esta alteração no valor separado</label> : <fieldset className="settlement-choice"><legend>{type === 'income' ? 'Situação da receita' : type === 'transfer' ? 'Situação da transferência' : 'Situação do pagamento'}</legend><div><label className={paid ? 'selected' : ''}><input type="radio" name="paidStatus" checked={paid} onChange={() => { setPaid(true); setEstimated(false); }}/><span>Já {type === 'income' || type === 'refund' ? 'recebi' : type === 'transfer' ? 'transferi' : 'paguei'}</span></label><label className={!paid ? 'selected' : ''}><input type="radio" name="paidStatus" checked={!paid} onChange={() => setPaid(false)}/><span>Ainda vou {type === 'income' || type === 'refund' ? 'receber' : type === 'transfer' ? 'transferir' : 'pagar'}</span></label></div><small>Use a data em que entrou ou saiu o dinheiro. Assim, o saldo não conta o mesmo movimento duas vezes.</small></fieldset>}
       {type === 'income' && !paid && <label className="checkbox"><input type="checkbox" checked={estimated} onChange={event => setEstimated(event.target.checked)}/>Receita apenas estimada (fora do saldo projetado)</label>}
-      {!['transfer', 'card_payment', 'reserve', 'release'].includes(type) && <label className="checkbox"><input type="checkbox" name="recurring" defaultChecked={tx?.recurring}/>Repetir mensalmente na projeção</label>}
+      {!['transfer', 'card_payment', 'card_debt', 'reserve', 'release'].includes(type) && <label className="checkbox"><input type="checkbox" name="recurring" defaultChecked={tx?.recurring}/>Repetir mensalmente na projeção</label>}
     </>}
     {type === 'income' && <section className="investment-entry">
       <label className="checkbox"><input type="checkbox" checked={investmentEnabled} onChange={event => { setInvestmentEnabled(event.target.checked); if (event.target.checked && !investmentAmount && investmentPlan) setInvestmentAmount(String(suggestedInvestment(investmentPlan, amountText) / 100)); }}/>Separar parte desta receita para investimento</label>
@@ -154,6 +161,6 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     </section>}
     {(type === 'reserve' || type === 'release') && <label>Tipo de investimento <span className="muted">(opcional)</span><select value={investmentTypeChoice} onChange={event => { setInvestmentTypeChoice(event.target.value); if (event.target.value !== 'Outro') setCustomInvestmentType(''); }}><option value="">Sem tipo informado</option>{investmentTypes.map(item => <option key={item}>{item}</option>)}<option value="Outro">Outro</option></select>{investmentTypeChoice === 'Outro' && <input aria-label="Qual tipo de investimento" value={customInvestmentType} onChange={event => setCustomInvestmentType(event.target.value)} maxLength={80} placeholder="Escreva o tipo"/>}</label>}
     {message && <p className="negative" role="alert">{message}</p>}
-    <button className="button primary full-width" disabled={saving}>{saving ? 'Salvando…' : submitLabel || (voice ? 'Conferi, salvar lançamento' : 'Salvar lançamento')} <ArrowRight size={15}/></button>
+    <button className="button primary full-width" disabled={saving}>{saving ? 'Salvando…' : submitLabel || (type === 'card_debt' ? 'Salvar parcelas restantes' : voice ? 'Conferi, salvar lançamento' : 'Salvar lançamento')} <ArrowRight size={15}/></button>
   </form>;
 }

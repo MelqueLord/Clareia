@@ -92,6 +92,16 @@
 .investment-entry-plan{font-size:10px}
 .income-account-notice{display:grid;gap:6px}
 .income-account-notice .text-link{justify-self:start}
+.midmonth-note,.card-debt-note{display:grid;gap:5px;line-height:1.55}
+.midmonth-note{background:#edf5e7;border-color:#d9e7d2}
+.midmonth-note strong,.card-debt-note strong{color:#315f45}
+.settlement-choice{margin:14px 0;padding:12px;border:1px solid #dfe9dc;border-radius:12px;background:#f8faf6}
+.settlement-choice legend{padding:0 5px;font-size:12px;font-weight:650}
+.settlement-choice>div{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.settlement-choice label{display:flex;flex-direction:row;align-items:center;gap:8px;margin:0;padding:11px;border:1px solid #e1e8de;border-radius:9px;background:white;color:#647366;font-size:11px}
+.settlement-choice label.selected{border-color:#92b69a;background:#eef6eb;color:#285b41;font-weight:650}
+.settlement-choice input{width:16px;height:16px;flex-shrink:0;margin:0;accent-color:var(--green)}
+.settlement-choice small{display:block;margin-top:9px;color:#819078;font-size:10px;line-height:1.55}
 .guided-footnote{margin-top:16px;padding-top:12px;border-top:1px solid #e6ece3;font-size:10px;color:#929d8e}
 .guided-refine-link{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:0;color:#4c775a;font-size:11px;font-weight:600}
 .guided-refine-link:hover{text-decoration:underline}

@@ -1,5 +1,5 @@
 export type Space = 'pf' | 'mei';
-export type Kind = 'expense' | 'income' | 'transfer' | 'refund' | 'card_payment' | 'reserve' | 'release';
+export type Kind = 'expense' | 'income' | 'transfer' | 'refund' | 'card_payment' | 'card_debt' | 'reserve' | 'release';
 export type Account = { id:string; name:string; bank:string; space:Space; balance:number; openingDate:string };
 export type Card = { id:string; name:string; space:Space; accountId:string; limit:number; closingDay:number; dueDay:number };
 export type Transaction = { id:string; description:string; amount:number; type:Kind; category:string; date:string; dueDate:string; paid:boolean; estimated:boolean; accountId:string; toAccountId:string; cardId:string; space:Space; installments:number; recurring:boolean; source:'manual'|'voice'; createdAt:string; goalId?:string; investmentAmount?:number; investmentType?:string; sourceIncomeId?:string };

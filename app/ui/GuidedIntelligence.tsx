@@ -112,8 +112,8 @@ export default function GuidedIntelligence({
         <button className="button primary" disabled={saving || listening}>{saving ? 'Salvando…' : 'Salvar receita de referência'} <ArrowRight size={16}/></button>
       </form>}
       {step === 1 && <div className="guided-action"><p className="muted">Cadastre uma conta bancária, carteira ou caixa do negócio e informe o saldo de hoje. Esse saldo será o ponto de partida das projeções.</p><button className="button primary" onClick={onAddAccount}>Cadastrar conta ou caixa <ArrowRight size={16}/></button></div>}
-      {step === 2 && <div className="guided-action"><p className="muted">Registre uma receita que já recebeu ou um valor que ainda está para entrar. A Central usa isso para distinguir dinheiro confirmado de previsão.</p><button className="button primary" onClick={() => onAddTransaction('income')}>Registrar primeiro recebimento <ArrowRight size={16}/></button></div>}
-      {step === 3 && <div className="guided-action"><p className="muted">Adicione um custo do MEI ou uma despesa pessoal. Se for um compromisso futuro, marque como pendente para ajudar na previsão.</p><button className="button primary" onClick={() => onAddTransaction('expense')}>Registrar primeiro custo ou despesa <ArrowRight size={16}/></button></div>}
+      {step === 2 && <div className="guided-action"><p className="muted">Se já recebeu salário ou outra renda neste mês, use a data em que o dinheiro entrou e marque “Já recebi”. Se ainda vai entrar, deixe como pendente.</p><button className="button primary" onClick={() => onAddTransaction('income')}>Registrar recebimento deste mês <ArrowRight size={16}/></button></div>}
+      {step === 3 && <div className="guided-action"><p className="muted">Começou no meio do mês? Cadastre também as contas que já pagou, com as datas reais, e marque “Já paguei”. Compromissos futuros ficam pendentes.</p><button className="button primary" onClick={() => onAddTransaction('expense')}>Registrar contas pagas ou futuras <ArrowRight size={16}/></button></div>}
       {message && step !== 0 && <p className="guided-message" role="status">{message}</p>}
     </div>}
 
