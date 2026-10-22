@@ -5,6 +5,8 @@ import { ArrowRight, Check, CheckCircle2, Mic, Sparkles, Square, Wallet, Buildin
 import type { FinanceData, Space } from '../../lib/model';
 import useSpeechCapture from './useSpeechCapture';
 
+export type GuideDestination = 'profile' | 'account' | 'income' | 'expense' | 'essentials' | 'floor';
+
 const valueFromText = (text: string) => {
   const match = text.match(/(?:r\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[,.]\d{1,2})?)(?:\s*(mil|k))?/i);
   if (!match) return null;
@@ -28,7 +30,7 @@ export function guidedSetupStatus(data: FinanceData, space: Space) {
 }
 
 export default function GuidedIntelligence({
-  data, space, saving, onSave, onAddAccount, onAddTransaction, onOpenSettings, onGoHome,
+  data, space, saving, onSave, onAddAccount, onAddTransaction, onOpenSettings, onGoHome, onNavigate,
 }: {
   data: FinanceData;
   space: Space;
@@ -38,8 +40,12 @@ export default function GuidedIntelligence({
   onAddTransaction: (type: 'income' | 'expense') => void;
   onOpenSettings: () => void;
   onGoHome: () => void;
+  onNavigate: (destination: GuideDestination) => void;
 }) {
   const status = guidedSetupStatus(data, space);
+  const preference = data.preferences[space];
+  const essentialsReviewed = !!preference.essentialsReviewed;
+  const floorReviewed = preference.floor !== null && preference.complete && !!preference.checkedOn;
   const initialSource = space === 'pf' ? data.profiles.pf.incomeSource : data.profiles.mei.activity;
   const initialAmount = space === 'pf' ? data.profiles.pf.monthlyIncomeTarget : data.profiles.mei.monthlyRevenueTarget;
   const [note, setNote] = useState('');
@@ -86,10 +92,12 @@ export default function GuidedIntelligence({
   return <section className="guided-setup panel">
     <div className="guided-heading">
       <span className="guided-icon"><Sparkles size={20}/></span>
-      <div><span className="eyebrow">CENTRAL DE INTELIGÊNCIA · PRIMEIRO ACESSO</span><h2>{status.ready ? 'Sua base inicial está pronta.' : 'Vamos preparar suas finanças juntos.'}</h2><p>{status.ready ? 'Receitas, saldo e despesas já dão ao Clareia uma base para começar a analisar seus dados.' : 'Eu vou pedir os dados em ordem. Você pode digitar ou ditar a primeira informação e revisar antes de salvar.'}</p></div>
+      <div><span className="eyebrow">CENTRAL DE INTELIGÊNCIA · SEU PRÓXIMO PASSO</span><h2>{status.ready ? 'Sua base inicial está pronta.' : 'Vamos preparar suas finanças juntos.'}</h2><p>{status.ready ? 'Receitas, saldo e despesas já dão ao Clareia uma base para começar a analisar seus dados.' : 'Siga a ordem sugerida ou toque em qualquer etapa para abrir a tela. Você também pode digitar ou ditar a primeira informação aqui.'}</p></div>
     </div>
     <div className="guided-progress-row"><div className="guided-progress"><span style={{ width: `${status.percent}%` }}/></div><strong>{status.ready ? '4 de 4 etapas' : `Etapa ${step + 1} de 4`}</strong></div>
-    <div className="guided-checklist">{steps.map((label, index) => <div key={label} className={`guided-check ${status.steps[index] ? 'done' : index === step ? 'current' : ''}`}><span>{status.steps[index] ? <Check size={14}/> : index + 1}</span><small>{label}</small></div>)}</div>
+    <div className="guided-checklist" aria-label="Etapas para organizar suas finanças">
+      {steps.map((label, index) => <button type="button" key={label} className={`guided-check ${status.steps[index] ? 'done' : index === step ? 'current' : ''}`} aria-current={index === step ? 'step' : undefined} title={`Ir para: ${label}`} onClick={() => onNavigate((['profile', 'account', 'income', 'expense'] as GuideDestination[])[index])}><span>{status.steps[index] ? <Check size={14}/> : index + 1}</span><small>{label}</small><ArrowRight size={13} aria-hidden="true"/></button>)}
+    </div>
 
     {!status.ready && <div className="guided-current-step">
       <div className="guided-step-title">{space === 'mei' ? <Building2 size={18}/> : <Wallet size={18}/>}<div><span className="eyebrow">PRÓXIMO DADO</span><h3>{currentTitle}</h3></div></div>
@@ -109,6 +117,11 @@ export default function GuidedIntelligence({
     </div>}
 
     {status.ready && <div className="guided-ready"><CheckCircle2 size={22}/><div><strong>O Clareia já pode analisar sua base inicial.</strong><p>Continue registrando movimentos para refinar as projeções. Depois, complete os dados pessoais ou do MEI e revise seus gastos essenciais para receber orientações mais precisas.</p></div><button className="button primary" onClick={onGoHome}>Abrir visão geral <ArrowRight size={16}/></button></div>}
+    <div className="guided-later">
+      <div><span className="eyebrow">DEPOIS DA BASE INICIAL</span><h3>Deixe as orientações mais precisas</h3><p>Esses dois ajustes complementam as primeiras etapas e podem ser feitos no seu tempo.</p></div>
+      <button type="button" className={`guided-later-link ${essentialsReviewed ? 'done' : ''}`} onClick={() => onNavigate('essentials')}><span className="guided-later-status">{essentialsReviewed ? <Check size={14}/> : '5'}</span><span><strong>Revisar gastos essenciais</strong><small>{essentialsReviewed ? 'Conferidos · Planejamento' : 'Planejamento · estimativa mensal por categoria'}</small></span><ArrowRight size={15}/></button>
+      <button type="button" className={`guided-later-link ${floorReviewed ? 'done' : ''}`} onClick={() => onNavigate('floor')}><span className="guided-later-status">{floorReviewed ? <Check size={14}/> : '6'}</span><span><strong>Conferir dados e piso de segurança</strong><small>{floorReviewed ? 'Conferido · Ajustes' : space === 'mei' ? 'Ajustes · capital de giro do negócio' : 'Ajustes · valor mínimo para manter disponível'}</small></span><ArrowRight size={15}/></button>
+    </div>
     {!status.ready && <div className="guided-footnote">Você pode pausar e voltar a esta central quando quiser. Dados só são salvos depois que você confirma cada etapa.</div>}
     {status.ready && <button className="guided-refine-link" onClick={onOpenSettings}>Refinar perfil e preferências <ArrowRight size={14}/></button>}
   </section>;
