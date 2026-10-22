@@ -1,19 +1,9 @@
 'use client';
 
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { ArrowRight, Check, CheckCircle2, Mic, Sparkles, Square, Wallet, Building2 } from 'lucide-react';
 import type { FinanceData, Space } from '../../lib/model';
-
-type SpeechLike = {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  onresult: ((e: { results: { [n: number]: { [n: number]: { transcript: string } } } }) => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-};
+import useSpeechCapture from './useSpeechCapture';
 
 const valueFromText = (text: string) => {
   const match = text.match(/(?:r\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[,.]\d{1,2})?)(?:\s*(mil|k))?/i);
@@ -55,41 +45,7 @@ export default function GuidedIntelligence({
   const [note, setNote] = useState('');
   const [source, setSource] = useState(initialSource);
   const [amount, setAmount] = useState(initialAmount === null ? '' : String(initialAmount / 100));
-  const [listening, setListening] = useState(false);
-  const [message, setMessage] = useState('');
-  const recognition = useRef<SpeechLike | null>(null);
-  useEffect(() => () => recognition.current?.stop(), []);
-
-  function record() {
-    const browser = window as unknown as { SpeechRecognition?: new () => SpeechLike; webkitSpeechRecognition?: new () => SpeechLike };
-    const Speech = browser.SpeechRecognition || browser.webkitSpeechRecognition;
-    if (!Speech) {
-      setMessage('Este navegador não oferece transcrição por voz. Digite aqui ou use o ditado do teclado.');
-      return;
-    }
-    if (listening) {
-      recognition.current?.stop();
-      return;
-    }
-    const speech = new Speech();
-    speech.lang = 'pt-BR';
-    speech.continuous = false;
-    speech.interimResults = false;
-    speech.onresult = event => setNote(event.results[0][0].transcript);
-    speech.onerror = event => {
-      setMessage(event.error === 'not-allowed' ? 'Permita o microfone nas configurações do navegador para ditar.' : 'Não foi possível transcrever. Tente novamente ou digite sua frase.');
-      setListening(false);
-    };
-    speech.onend = () => setListening(false);
-    recognition.current = speech;
-    try {
-      speech.start();
-      setListening(true);
-      setMessage('');
-    } catch {
-      setMessage('Não foi possível iniciar o microfone.');
-    }
-  }
+  const { listening, message, setMessage, record } = useSpeechCapture(setNote);
 
   function applySentence() {
     const clean = note.trim();
