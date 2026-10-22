@@ -2,6 +2,12 @@ import { env } from 'cloudflare:workers';
 import { auth } from './auth';
 import type { Space } from './model';
 
+// The first-password flag was introduced after some people had already opened
+// their accounts. Those existing accounts must keep working without being
+// mistaken for a first login; accounts created after this rollout still use
+// the required first-password flow.
+const FIRST_PASSWORD_ENFORCEMENT_AT = Date.parse('2026-10-22T15:35:32-03:00');
+
 export async function tokenHash(token: string) {
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))), b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -21,6 +27,10 @@ export async function getFinanceUser(req: Request) {
 
   const space = authenticated.user.space as Space;
   if (space !== 'pf' && space !== 'mei') return null;
+  const createdAt = authenticated.user.createdAt instanceof Date
+    ? authenticated.user.createdAt.getTime()
+    : Date.parse(String(authenticated.user.createdAt));
+  const isLegacyAccount = Number.isFinite(createdAt) && createdAt < FIRST_PASSWORD_ENFORCEMENT_AT;
 
   return {
     userId: `personal:${authenticated.user.id}:${space}`,
@@ -29,7 +39,7 @@ export async function getFinanceUser(req: Request) {
     email: authenticated.user.email,
     defaultSpace: space,
     isTest: false,
-    mustChangePassword: authenticated.user.mustChangePassword === true,
+    mustChangePassword: authenticated.user.mustChangePassword === true && !isLegacyAccount,
   };
 }
 
