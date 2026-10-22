@@ -89,3 +89,5 @@
   .year-end-actions .button{width:100%}
   .year-end-item{align-items:flex-start;padding:11px 9px}
 }
+
+.card-actions{flex-wrap:wrap}.section-heading .card-actions .button{flex:1 1 135px}

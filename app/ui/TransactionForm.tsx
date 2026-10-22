@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ArrowDown, ArrowRight, Mic } from 'lucide-react';
 import type { FinanceData, InvestmentPlan, Kind, Space, Transaction } from '../../lib/model';
-import { categoriesFor, cents, firstCardDue, id } from '../../lib/model';
+import { addMonths, categoriesFor, cents, firstCardDue, id } from '../../lib/model';
 import { parseVoice, type VoiceDraft } from '../../lib/voice';
 import MoneyInput from './MoneyInput';
 
@@ -16,7 +16,7 @@ function suggestedInvestment(plan: InvestmentPlan | undefined, amountText: strin
   return income > 0 ? Math.min(plan.value, income) : plan.value;
 }
 
-export default function TransactionForm({ data, space, asOf, tx, voice, initialType, initialGoalId, saving, submitLabel, onSave, onNeedAccount }: {
+export default function TransactionForm({ data, space, asOf, tx, voice, initialType, initialGoalId, cardPurchaseMode = false, initialCardId = '', saving, submitLabel, onSave, onNeedAccount }: {
   data: FinanceData;
   space: Space;
   asOf: string;
@@ -24,6 +24,8 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   voice: VoiceDraft | null;
   initialType: Kind | null;
   initialGoalId?: string | null;
+  cardPurchaseMode?: boolean;
+  initialCardId?: string;
   saving: boolean;
   submitLabel?: string;
   onSave: (transaction: Transaction) => void;
@@ -34,15 +36,16 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const firstIncomeCategory = categoriesFor(selectedSpace, 'income')[0] || 'Outros';
   const incomeAccounts = data.accounts.filter(account => account.space === selectedSpace);
   const isSpecialType = !['expense', 'income'].includes(type);
-  const [showAdvanced, setShowAdvanced] = useState(!!tx || (!!voice && !['expense', 'income'].includes(voice.type)) || (!!initialType && !['expense', 'income'].includes(initialType)));
+  const [showAdvanced, setShowAdvanced] = useState(cardPurchaseMode || !!initialCardId || !!tx || (!!voice && !['expense', 'income'].includes(voice.type)) || (!!initialType && !['expense', 'income'].includes(initialType)));
   const [description, setDescription] = useState(tx?.description || voice?.description || '');
   const [category, setCategory] = useState(tx?.category || voice?.category || ((voice?.type || initialType) === 'income' ? firstIncomeCategory : 'Outros'));
   const [categoryTouched, setCategoryTouched] = useState(!!tx || !!voice);
   const [goalId, setGoalId] = useState(tx?.goalId || voice?.goalId || initialGoalId || '');
-  const [cardId, setCardId] = useState(tx?.cardId || voice?.cardId || '');
+  const [cardId, setCardId] = useState(tx?.cardId || voice?.cardId || initialCardId || '');
+  const [installments, setInstallments] = useState(tx?.installments || voice?.installments || 1);
   const [accountId, setAccountId] = useState(tx?.accountId || voice?.accountId || (!voice && incomeAccounts.length === 1 ? incomeAccounts[0].id : ''));
   const [date, setDate] = useState(tx?.date || voice?.date || asOf);
-  const [due, setDue] = useState(tx?.dueDate || voice?.dueDate || (voice?.type === 'card_payment' && voice.date ? voice.date : voice?.cardId && voice.date ? firstCardDue(voice.date, data.cards.find(card => card.id === voice.cardId)!) : voice?.date) || (initialType === 'card_debt' ? '' : asOf));
+  const [due, setDue] = useState(tx?.dueDate || voice?.dueDate || (voice?.type === 'card_payment' && voice.date ? voice.date : voice?.cardId && voice.date ? firstCardDue(voice.date, data.cards.find(card => card.id === voice.cardId)!) : voice?.date) || (initialType === 'card_debt' ? '' : initialCardId ? firstCardDue(asOf, data.cards.find(item => item.id === initialCardId)!) : asOf));
   const [paid, setPaid] = useState(tx?.paid ?? (voice ? voice.statusInferred ? voice.paid : false : true));
   const [estimated, setEstimated] = useState(tx?.estimated || false);
   const [amountText, setAmountText] = useState(tx ? String(tx.amount / 100) : voice?.amount ? String(voice.amount / 100) : '');
@@ -55,6 +58,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const [investmentTouched, setInvestmentTouched] = useState(false);
   const [message, setMessage] = useState('');
   const card = data.cards.find(item => item.id === cardId);
+  const lastInstallmentDue = due && installments > 0 ? addMonths(due, installments - 1) : '';
   const investmentPlan = (data.investmentPlans || []).find(plan => plan.space === selectedSpace && plan.incomeCategory === category);
 
   function chooseCategory(nextCategory: string) {
@@ -77,6 +81,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     if (!['expense', 'income'].includes(nextType)) setShowAdvanced(true);
     if (!['expense', 'income'].includes(nextType)) setCategoryTouched(true);
     setCardId('');
+    setInstallments(1);
     const options = categoriesFor(selectedSpace, nextType === 'income' ? 'income' : 'expense');
     const nextCategory = options.includes(category) ? category : options[0] || 'Outros';
     setCategory(nextCategory);
@@ -161,9 +166,9 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
         <button type="button" className={type === 'income' ? 'selected' : ''} aria-pressed={type === 'income'} onClick={() => chooseType('income')}>Receita</button>
       </div>
       {isSpecialType && <div className="notice quick-special-note">Este lançamento tem campos próprios. Complete os detalhes abaixo.</div>}
-      <label>{type === 'card_debt' ? 'O que foi comprado?' : type === 'income' && selectedSpace === 'pf' ? 'Salário ou outra renda' : selectedSpace === 'mei' && type === 'income' ? 'Cliente, serviço ou venda' : selectedSpace === 'mei' ? 'Fornecedor, custo ou DAS' : 'O que foi?'}<input required name="description" value={description} onChange={event => setDescription(event.target.value)} onBlur={inferCategory} placeholder={type === 'card_debt' ? 'Ex.: celular, geladeira' : type === 'income' && selectedSpace === 'pf' ? 'Ex.: salário, aluguel' : selectedSpace === 'mei' ? 'Ex.: venda, insumos, DAS' : 'Ex.: mercado, aluguel'} maxLength={180}/></label>
+      <label>{type === 'card_debt' || cardPurchaseMode ? 'O que foi comprado?' : type === 'income' && selectedSpace === 'pf' ? 'Salário ou outra renda' : selectedSpace === 'mei' && type === 'income' ? 'Cliente, serviço ou venda' : selectedSpace === 'mei' ? 'Fornecedor, custo ou DAS' : 'O que foi?'}<input required name="description" value={description} onChange={event => setDescription(event.target.value)} onBlur={inferCategory} placeholder={type === 'card_debt' || cardPurchaseMode ? 'Ex.: celular, geladeira' : type === 'income' && selectedSpace === 'pf' ? 'Ex.: salário, aluguel' : selectedSpace === 'mei' ? 'Ex.: venda, insumos, DAS' : 'Ex.: mercado, aluguel'} maxLength={180}/></label>
       {category !== 'Outros' && !isSpecialType && <small className="quick-category-hint">Categoria: {category}</small>}
-      <label>{type === 'card_debt' ? 'Quanto falta pagar? (R$)' : 'Valor (R$)'}<MoneyInput required name="amount" value={amountText} onChange={changeAmount} placeholder="0,00"/></label>
+      <label>{type === 'card_debt' ? 'Total que ainda falta pagar (R$)' : cardId && type === 'expense' ? 'Valor total da compra (R$)' : 'Valor (R$)'}<MoneyInput required name="amount" value={amountText} onChange={changeAmount} placeholder="0,00"/></label>
       {incomeAccounts.length > 1 && !isSpecialType && <label className="quick-account-select">{type === 'income' ? 'Em qual banco entrou?' : 'Conta usada'}<select required value={card?.accountId || accountId} onChange={event => setAccountId(event.target.value)}><option value="">Escolha uma conta</option>{incomeAccounts.map(account => <option key={account.id} value={account.id}>{account.bank} · {account.name}</option>)}</select></label>}
       {incomeAccounts.length === 1 && !isSpecialType && <p className="quick-account-note">{type === 'income' ? 'Entrou em' : 'Conta'}: {incomeAccounts[0].bank} · {incomeAccounts[0].name}</p>}
       {!incomeAccounts.length && type !== 'card_debt' && <p className="quick-account-note">Sem conta bancária cadastrada. O lançamento pode ser vinculado depois.</p>}
@@ -185,7 +190,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       {type === 'card_debt' && <div className="notice card-debt-note"><strong>Inclua somente o que ainda falta pagar.</strong><span>Informe as parcelas que faltam e o próximo vencimento.</span></div>}
     {type === 'card_debt' && !data.cards.some(item => item.space === selectedSpace) && <div className="notice income-account-notice">Cadastre primeiro a conta e o cartão do banco que tem as parcelas.<button type="button" className="text-link" onClick={onNeedAccount}>Cadastrar conta e cartão <ArrowRight size={14}/></button></div>}
     {type === 'transfer' && <label>Conta de destino<select name="toAccount" required defaultValue={tx?.toAccountId || ''}><option value="">Selecione</option>{data.accounts.filter(account => account.space === selectedSpace && account.id !== accountId).map(account => <option key={account.id} value={account.id}>{account.name} · {account.bank}</option>)}<option value={selectedSpace === 'mei' ? 'external:pf' : 'external:mei'}>Conta {selectedSpace === 'mei' ? 'pessoal' : 'do MEI'} em outro acesso</option></select></label>}
-      {cardId && type !== 'card_payment' && <label>{type === 'card_debt' ? 'Parcelas que ainda faltam' : 'Número de parcelas'}<input name="installments" type="number" min="1" max="36" defaultValue={tx?.installments || voice?.installments || 1}/></label>}
+      {cardId && type !== 'card_payment' && <label>{type === 'card_debt' ? 'Parcelas que ainda faltam' : 'Número de parcelas'}<input name="installments" type="number" min="1" max="36" value={installments} onChange={event => setInstallments(Math.max(1, Math.min(36, Number(event.target.value) || 1)))}/><small className="muted">Última parcela prevista para {lastInstallmentDue ? new Date(lastInstallmentDue + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}.</small></label>}
       {type === 'card_debt' && <label>Situação da parcela<select value={paid ? 'paid' : 'pending'} onChange={event => setPaid(event.target.value === 'paid')}><option value="pending">Ainda vou pagar</option><option value="paid">Já foi paga</option></select></label>}
       {(!cardId || type === 'card_payment') && type !== 'card_debt' && <>
       {['reserve', 'release'].includes(type) ? <label className="checkbox"><input type="checkbox" checked={paid} onChange={event => setPaid(event.target.checked)}/>Confirmo esta alteração no valor separado</label> : isSpecialType && <fieldset className="settlement-choice"><legend>{type === 'income' ? 'Situação da receita' : type === 'transfer' ? 'Situação da transferência' : 'Situação do pagamento'}</legend><div><label className={paid ? 'selected' : ''}><input type="radio" name="paidStatus" checked={paid} onChange={() => { setPaid(true); setEstimated(false); }}/><span>Já {type === 'income' || type === 'refund' ? 'recebi' : type === 'transfer' ? 'transferi' : 'paguei'}</span></label><label className={!paid ? 'selected' : ''}><input type="radio" name="paidStatus" checked={!paid} onChange={() => setPaid(false)}/><span>Ainda vou {type === 'income' || type === 'refund' ? 'receber' : type === 'transfer' ? 'transferir' : 'pagar'}</span></label></div></fieldset>}
