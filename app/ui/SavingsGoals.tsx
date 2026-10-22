@@ -66,7 +66,7 @@ export default function SavingsGoals({ data, space, asOf, saving, onSave, onCont
     }
   }
 
-  return <section className="panel savings-goals">
+  return <section id="savings-goals" className="panel savings-goals">
     <div className="section-heading"><div><h2><Target size={19}/>Metas para guardar dinheiro</h2><p>Escolha um objetivo e acompanhe o que já separou.</p></div><span className="badge">Seu ritmo, seus planos</span></div>
     <div className="goal-list">{goals.map(goal => {
       const plan = goalPlan(data, goal, asOf);
