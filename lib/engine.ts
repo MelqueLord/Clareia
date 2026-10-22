@@ -12,7 +12,7 @@ export function essentialFlows(data:FinanceData,space:Space,asOf:string,end:stri
    let covered=0;
    for(const t of data.transactions.filter(t=>t.space===space&&t.category===item.category&&['expense','refund'].includes(t.type))){
     if(t.date.slice(0,7)===month.slice(0,7))covered+=(t.type==='refund'?-1:1)*t.amount;
-    if(t.recurring&&!t.cardId&&t.date.slice(0,7)<month.slice(0,7))covered+=(t.type==='refund'?-1:1)*t.amount;
+    if(t.recurring&&!t.cardId&&t.date.slice(0,7)<month.slice(0,7)&&(!t.recurrenceEndDate||month<=t.recurrenceEndDate.slice(0,7)))covered+=(t.type==='refund'?-1:1)*t.amount;
    }
    const remaining=Math.max(0,item.monthly-Math.max(0,covered));
    for(let i=0;i<days;i++){const amount=Math.floor(remaining/days)+(i<remaining%days?1:0);if(!amount)continue;const date=new Date(Date.parse(start+'T12:00:00Z')+i*86400000).toISOString().slice(0,10);if(date<end)out.push({date,amount:-amount,id:`essential:${month}:${item.category}`,description:`Previsão essencial · ${item.category}`,category:item.category,estimated:false});}
@@ -27,9 +27,9 @@ export function invoiceOutstanding(data:FinanceData,cardId:string,month:string):
 export function flows(data:FinanceData,space:Space,asOf:string,end:string):Flow[]{
  const out:Flow[]=[];
  for(const t of data.transactions){if(t.cardId||['reserve','release'].includes(t.type))continue;if(t.space!==space&&!(t.type==='transfer'&&data.accounts.find(a=>a.id===t.toAccountId)?.space===space))continue;
-  const push=(date:string,base:boolean)=>{if(base&&t.paid||date>end)return;const relevant=date<asOf?asOf:date;let sign=t.type==='income'||t.type==='refund'?1:-1;if(t.type==='transfer'){const from=data.accounts.find(a=>a.id===t.accountId)?.space;const to=data.accounts.find(a=>a.id===t.toAccountId)?.space;if(from===to)return;sign=to===space?1:-1;}out.push({date:relevant,amount:sign*t.amount,id:t.id,description:t.description,category:t.category,estimated:t.estimated&&sign>0});};
+   const push=(date:string,base:boolean)=>{if(base&&t.paid||date>end||t.recurrenceEndDate&&date>t.recurrenceEndDate)return;const relevant=date<asOf?asOf:date;let sign=t.type==='income'||t.type==='refund'?1:-1;if(t.type==='transfer'){const from=data.accounts.find(a=>a.id===t.accountId)?.space;const to=data.accounts.find(a=>a.id===t.toAccountId)?.space;if(from===to)return;sign=to===space?1:-1;}out.push({date:relevant,amount:sign*t.amount,id:t.id,description:t.description,category:t.category,estimated:t.estimated&&sign>0});};
   push(t.dueDate,true);
-  if(t.recurring){for(let i=1;i<=120;i++){const d=addMonths(t.dueDate,i);if(d>end)break;if(d>=asOf)push(d,false);}}
+   if(t.recurring){for(let i=1;i<=120;i++){const d=addMonths(t.dueDate,i);if(d>end||t.recurrenceEndDate&&d>t.recurrenceEndDate)break;if(d>=asOf)push(d,false);}}
  }
  for(const card of data.cards.filter(c=>c.space===space)){const months=new Set<string>();for(const t of data.transactions.filter(t=>t.cardId===card.id&&['expense','refund','card_debt'].includes(t.type))){for(let i=0;i<t.installments;i++){const date=addMonths(t.dueDate,i);if(date<=end)months.add(date.slice(0,7));}}for(const month of months){const rows=invoiceRows(data,card.id,month);const amount=invoiceOutstanding(data,card.id,month);if(amount){const due=rows[0]?.date||month+'-01';out.push({date:due<asOf?asOf:due,amount:-amount,id:rows[0]?.id||card.id,description:`Fatura ${card.name} · ${monthLabel(month)}`,category:'Cartões',estimated:false,cardId:card.id});}}}
  return out.sort((a,b)=>a.date.localeCompare(b.date));

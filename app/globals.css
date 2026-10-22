@@ -57,3 +57,35 @@
   .home-details-content{padding:0 14px 16px}
   .home-details-content .panel{padding:17px 14px}
 }
+
+.year-end-review{margin:20px 0;background:linear-gradient(115deg,#f2f7ed,#fff);border-color:#dce8d5}
+.year-end-heading{display:flex;align-items:flex-start;gap:13px;margin-bottom:15px}
+.year-end-icon{display:grid;place-items:center;flex:0 0 40px;height:40px;border-radius:12px;background:#e2ecd9;color:var(--green)}
+.year-end-heading .eyebrow{font-size:8px;margin-bottom:4px}
+.year-end-heading h2{font-size:18px}
+.year-end-heading p{font-size:11px;color:var(--muted);margin-top:5px}
+.year-end-review>.button{margin-left:53px}
+.year-end-content{display:grid;gap:18px;margin-top:20px}
+.year-end-group{padding-top:16px;border-top:1px solid #e2e9dc}
+.year-end-group h3{display:flex;align-items:center;gap:8px;font-size:13px}
+.year-end-group>p{margin:6px 0 10px}
+.year-end-list{display:grid;gap:7px;margin-top:12px}
+.year-end-item{display:flex;align-items:center;gap:11px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}
+.year-end-item input{flex:0 0 auto;width:17px;height:17px;accent-color:var(--green)}
+.year-end-item>span{display:grid;gap:4px;flex:1;min-width:0}
+.year-end-item strong{font-size:12px;overflow-wrap:anywhere}
+.year-end-item small{font-size:10px;color:var(--muted)}
+.year-end-item.installment{cursor:default}
+.year-end-item.installment>svg{flex:0 0 auto;color:var(--green)}
+.year-end-empty{font-size:11px;color:var(--muted);padding:12px 0}
+.year-end-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.year-end-success{display:flex;align-items:flex-start;gap:8px;color:#52744e;font-size:11px;margin-top:14px}
+.year-end-success svg{flex:0 0 auto}
+@media(max-width:720px){
+  .year-end-review{padding:19px 16px}
+  .year-end-heading h2{font-size:16px}
+  .year-end-review>.button{margin-left:0;width:100%}
+  .year-end-actions{display:grid;grid-template-columns:1fr}
+  .year-end-actions .button{width:100%}
+  .year-end-item{align-items:flex-start;padding:11px 9px}
+}

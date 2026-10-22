@@ -133,6 +133,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       space: selectedSpace,
       installments: cardId && type !== 'card_payment' ? Number(form.get('installments')) || 1 : 1,
       recurring: type !== 'card_debt' && !cardId && form.get('recurring') === 'on',
+      recurrenceEndDate: form.get('recurring') === 'on' ? tx?.recurrenceEndDate : undefined,
       source: voice ? 'voice' : tx?.source || 'manual',
       createdAt: tx?.createdAt || new Date().toISOString(),
       goalId: ['reserve', 'release'].includes(type) && goalId ? goalId : undefined,
