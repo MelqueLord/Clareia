@@ -18,6 +18,7 @@ export default function InstallAppCard({
   variant?: 'login' | 'settings';
 }) {
   const [ios, setIos] = useState(false);
+  const [android, setAndroid] = useState(false);
   const [installed, setInstalled] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -26,6 +27,7 @@ export default function InstallAppCard({
       || (navigator as Navigator & { standalone?: boolean }).standalone === true;
     const platform = navigator as Navigator & { userAgentData?: { platform?: string } };
     setInstalled(standalone);
+    setAndroid(/Android/i.test(navigator.userAgent));
     setIos(/iPhone|iPad|iPod/i.test(navigator.userAgent)
       || (platform.userAgentData?.platform === 'iOS')
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
@@ -63,7 +65,7 @@ export default function InstallAppCard({
       <li>Abra esta página no Safari e toque em <Share2 size={14}/> <strong>Compartilhar</strong>.</li>
       <li>Escolha <strong>Adicionar à Tela de Início</strong> e confirme.</li>
     </ol>}
-    {!installed && !ios && !prompt && <p className="install-app-help">No Android, abra o menu <strong>⋮</strong> do navegador e escolha <strong>Instalar app</strong> ou <strong>Adicionar à tela inicial</strong>.</p>}
+    {!installed && !ios && !prompt && <p className="install-app-help">{android ? <>No Android, abra o menu <strong>⋮</strong> do navegador e escolha <strong>Instalar app</strong> ou <strong>Adicionar à tela inicial</strong>.</> : <>No Chrome ou Edge, abra o menu <strong>⋮</strong> e escolha <strong>Instalar Clareia</strong>. No iPhone, abra no Safari e use Compartilhar para adicionar à tela inicial.</>}</p>}
     {message && <p className="install-app-message" role="status">{message}</p>}
   </div>;
 }
