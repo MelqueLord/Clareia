@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import { ArrowRight, Check, CheckCircle2, Mic, Sparkles, Square, Wallet, Building2 } from 'lucide-react';
 import type { FinanceData, Space } from '../../lib/model';
 import useSpeechCapture from './useSpeechCapture';
+import MoneyInput from './MoneyInput';
 
 export type GuideDestination = 'profile' | 'account' | 'income' | 'expense' | 'essentials' | 'investments' | 'floor';
 
@@ -106,7 +107,7 @@ export default function GuidedIntelligence({
         <p className="muted">{space === 'pf' ? 'Conte de onde vem sua renda e quanto espera receber por mês. Se sua renda ainda não começou, informe 0.' : 'Conte o que o MEI vende ou presta e quanto espera faturar por mês. Se ainda não faturou, informe 0.'}</p>
         <label className="guided-note-label">Fale ou digite sua frase<textarea value={note} rows={2} onChange={event => setNote(event.target.value)} placeholder={space === 'pf' ? 'Ex.: Recebo R$ 3.500 por mês de salário' : 'Ex.: Faço bolos e faturo cerca de R$ 4.000 por mês'}/></label>
         <div className="guided-note-actions"><button type="button" className={`button secondary ${listening ? 'listening-button' : ''}`} onClick={record}>{listening ? <Square size={16}/> : <Mic size={16}/>} {listening ? 'Parar de ouvir' : 'Ditar'}</button><button type="button" className="text-link" disabled={!note.trim()} onClick={applySentence}>Usar frase para preencher <ArrowRight size={14}/></button></div>
-        <div className="form-grid guided-fields"><label>{space === 'pf' ? 'Principal fonte de renda' : 'Atividade que gera faturamento'}<input value={source} onChange={event => setSource(event.target.value)} maxLength={space === 'pf' ? 80 : 120} required placeholder={space === 'pf' ? 'Salário, autônomo, benefício…' : 'Serviços, vendas, alimentação…'}/></label><label>{space === 'pf' ? 'Renda mensal esperada (R$)' : 'Faturamento mensal esperado (R$)'}<input type="number" inputMode="decimal" min="0" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} required placeholder="0,00"/></label></div>
+        <div className="form-grid guided-fields"><label>{space === 'pf' ? 'Principal fonte de renda' : 'Atividade que gera faturamento'}<input value={source} onChange={event => setSource(event.target.value)} maxLength={space === 'pf' ? 80 : 120} required placeholder={space === 'pf' ? 'Salário, autônomo, benefício…' : 'Serviços, vendas, alimentação…'}/></label><label>{space === 'pf' ? 'Renda mensal esperada (R$)' : 'Faturamento mensal esperado (R$)'}<MoneyInput value={amount} onChange={setAmount} required placeholder="0,00"/></label></div>
         <p className="small-text muted">A transcrição pode usar o serviço de voz do navegador. O áudio não é armazenado; revise os campos antes de salvar.</p>
         {message && <p className="guided-message" role="status">{message}</p>}
         <button className="button primary" disabled={saving || listening}>{saving ? 'Salvando…' : 'Salvar receita de referência'} <ArrowRight size={16}/></button>

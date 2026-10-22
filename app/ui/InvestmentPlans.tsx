@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import { ArrowRight, Check, PiggyBank, Trash2 } from 'lucide-react';
 import type { FinanceData, InvestmentPlan, Space } from '../../lib/model';
 import { categoriesFor, cents, dateLabel, id, money } from '../../lib/model';
+import MoneyInput from './MoneyInput';
 
 const investmentTypes = ['Poupança', 'CDB ou RDB', 'Tesouro Direto', 'Fundos de investimento', 'Ações ou ETFs', 'Criptoativos'];
 
@@ -101,7 +102,7 @@ export default function InvestmentPlans({ data, space, saving, onSave }: {
         <label>Quando esta receita entrar<select value={category} onChange={event => setCategory(event.target.value)}>{categories.map(item => <option key={item}>{item}</option>)}</select></label>
         <label>Quanto pretende separar?<select value={mode} onChange={event => { setMode(event.target.value as 'fixed' | 'percent'); setValue(''); }}><option value="fixed">Valor fixo por recebimento</option><option value="percent">Percentual da receita</option></select></label>
       </div>
-      <label>{mode === 'fixed' ? 'Valor a separar (R$)' : 'Percentual da receita (%)'}<input required type="number" min="0.01" max={mode === 'percent' ? '100' : undefined} step="0.01" inputMode="decimal" value={value} onChange={event => setValue(event.target.value)} placeholder={mode === 'fixed' ? 'Ex.: 300,00' : 'Ex.: 10'}/></label>
+      <label>{mode === 'fixed' ? 'Valor a separar (R$)' : 'Percentual da receita (%)'}{mode === 'fixed' ? <MoneyInput required value={value} onChange={setValue} placeholder="Ex.: 300,00"/> : <input required type="number" min="0.01" max="100" step="0.01" inputMode="decimal" value={value} onChange={event => setValue(event.target.value)} placeholder="Ex.: 10"/>}</label>
       <label>Tipo de investimento <span className="muted">(opcional)</span><select value={typeChoice} onChange={event => setTypeChoice(event.target.value)}><option value="">Ainda não decidi</option>{investmentTypes.map(item => <option key={item}>{item}</option>)}<option value="Outro">Outro</option></select></label>
       {typeChoice === 'Outro' && <label>Qual tipo de investimento?<input value={customType} onChange={event => setCustomType(event.target.value)} maxLength={80} placeholder="Escreva o nome"/></label>}
       <p className="small-text muted">O valor será sugerido no próximo lançamento de receita. Você poderá ajustar ou desmarcar antes de salvar.</p>
