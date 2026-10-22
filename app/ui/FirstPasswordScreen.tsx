@@ -2,8 +2,11 @@
 
 import { FormEvent, useState } from 'react';
 import { ArrowRight, Compass, LockKeyhole } from 'lucide-react';
+import InstallAppCard from './InstallAppCard';
 
-export default function FirstPasswordScreen({ onComplete }: { onComplete: () => void }) {
+type InstallPrompt = { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }> };
+
+export default function FirstPasswordScreen({ onComplete, installPrompt, onInstallUsed }: { onComplete: () => void; installPrompt: InstallPrompt | null; onInstallUsed: () => void }) {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -52,6 +55,7 @@ export default function FirstPasswordScreen({ onComplete }: { onComplete: () => 
         {error&&<p className="login-error" role="alert">{error}</p>}
         <button className="button primary full-width" disabled={busy}><LockKeyhole size={17}/>{busy?'Atualizando…':'Alterar senha e continuar'}<ArrowRight size={17}/></button>
       </form>
+      <InstallAppCard prompt={installPrompt} onPromptUsed={onInstallUsed} variant="settings"/>
     </section>
   </div>;
 }
