@@ -5,7 +5,7 @@ import { ArrowRight, Check, CheckCircle2, Mic, Sparkles, Square, Wallet, Buildin
 import type { FinanceData, Space } from '../../lib/model';
 import useSpeechCapture from './useSpeechCapture';
 
-export type GuideDestination = 'profile' | 'account' | 'income' | 'expense' | 'essentials' | 'floor';
+export type GuideDestination = 'profile' | 'account' | 'income' | 'expense' | 'essentials' | 'investments' | 'floor';
 
 const valueFromText = (text: string) => {
   const match = text.match(/(?:r\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[,.]\d{1,2})?)(?:\s*(mil|k))?/i);
@@ -45,6 +45,7 @@ export default function GuidedIntelligence({
   const status = guidedSetupStatus(data, space);
   const preference = data.preferences[space];
   const essentialsReviewed = !!preference.essentialsReviewed;
+  const hasInvestmentPlan = (data.investmentPlans || []).some(plan => plan.space === space);
   const floorReviewed = preference.floor !== null && preference.complete && !!preference.checkedOn;
   const initialSource = space === 'pf' ? data.profiles.pf.incomeSource : data.profiles.mei.activity;
   const initialAmount = space === 'pf' ? data.profiles.pf.monthlyIncomeTarget : data.profiles.mei.monthlyRevenueTarget;
@@ -118,9 +119,10 @@ export default function GuidedIntelligence({
 
     {status.ready && <div className="guided-ready"><CheckCircle2 size={22}/><div><strong>O Clareia já pode analisar sua base inicial.</strong><p>Continue registrando movimentos para refinar as projeções. Depois, complete os dados pessoais ou do MEI e revise seus gastos essenciais para receber orientações mais precisas.</p></div><button className="button primary" onClick={onGoHome}>Abrir visão geral <ArrowRight size={16}/></button></div>}
     <div className="guided-later">
-      <div><span className="eyebrow">DEPOIS DA BASE INICIAL</span><h3>Deixe as orientações mais precisas</h3><p>Esses dois ajustes complementam as primeiras etapas e podem ser feitos no seu tempo.</p></div>
+      <div><span className="eyebrow">DEPOIS DA BASE INICIAL</span><h3>Deixe as orientações mais precisas</h3><p>Revise estes ajustes complementares no seu tempo.</p></div>
       <button type="button" className={`guided-later-link ${essentialsReviewed ? 'done' : ''}`} onClick={() => onNavigate('essentials')}><span className="guided-later-status">{essentialsReviewed ? <Check size={14}/> : '5'}</span><span><strong>Revisar gastos essenciais</strong><small>{essentialsReviewed ? 'Conferidos · Planejamento' : 'Planejamento · estimativa mensal por categoria'}</small></span><ArrowRight size={15}/></button>
-      <button type="button" className={`guided-later-link ${floorReviewed ? 'done' : ''}`} onClick={() => onNavigate('floor')}><span className="guided-later-status">{floorReviewed ? <Check size={14}/> : '6'}</span><span><strong>Conferir dados e piso de segurança</strong><small>{floorReviewed ? 'Conferido · Ajustes' : space === 'mei' ? 'Ajustes · capital de giro do negócio' : 'Ajustes · valor mínimo para manter disponível'}</small></span><ArrowRight size={15}/></button>
+      <button type="button" className={`guided-later-link ${hasInvestmentPlan ? 'done' : ''}`} onClick={() => onNavigate('investments')}><span className="guided-later-status">{hasInvestmentPlan ? <Check size={14}/> : '6'}</span><span><strong>Planejar investimentos</strong><small>{hasInvestmentPlan ? 'Plano ativo · Planejamento' : 'Planejamento · valor por salário ou outra receita'}</small></span><ArrowRight size={15}/></button>
+      <button type="button" className={`guided-later-link ${floorReviewed ? 'done' : ''}`} onClick={() => onNavigate('floor')}><span className="guided-later-status">{floorReviewed ? <Check size={14}/> : '7'}</span><span><strong>Conferir dados e piso de segurança</strong><small>{floorReviewed ? 'Conferido · Ajustes' : space === 'mei' ? 'Ajustes · capital de giro do negócio' : 'Ajustes · valor mínimo para manter disponível'}</small></span><ArrowRight size={15}/></button>
     </div>
     {!status.ready && <div className="guided-footnote">Você pode pausar e voltar a esta central quando quiser. Dados só são salvos depois que você confirma cada etapa.</div>}
     {status.ready && <button className="guided-refine-link" onClick={onOpenSettings}>Refinar perfil e preferências <ArrowRight size={14}/></button>}

@@ -58,6 +58,40 @@
 .guided-later-link.done{border-color:#dce9d7;background:#f7faf5}
 .guided-later-link.done .guided-later-status{border-color:#477f62;background:#477f62;color:#fff}
 .guided-later-link>svg{margin-left:auto;flex-shrink:0;color:#65816a}
+.investment-panel .section-heading h2 svg,.investment-history-heading h3 svg{vertical-align:-4px;margin-right:7px;color:#4f8060}
+.investment-disclaimer{margin:0 0 14px;line-height:1.5}
+.investment-plan-list{display:grid;gap:8px}
+.investment-plan-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px;border:1px solid #e5ebe1;border-radius:10px;background:#fff}
+.investment-plan-card>div:first-child{display:grid;gap:4px;min-width:0}
+.investment-plan-card .eyebrow{font-size:9px;color:#71816e}
+.investment-plan-card strong{font-size:12px;color:var(--ink)}
+.investment-plan-card small{font-size:10px;color:#7f8d76}
+.investment-plan-actions{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.investment-plan-actions .text-link{display:inline-flex;align-items:center;gap:4px;font-size:10px}
+.investment-plan-form{margin-top:16px;padding:17px;border:1px solid #e5ebe1;border-radius:12px;background:#f8faf7}
+.investment-form-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.investment-form-heading h3,.investment-history-heading h3{font-size:13px;color:var(--ink)}
+.investment-plan-form>label{margin:8px 0}
+.investment-plan-form>.button{margin-top:5px}
+.investment-empty{padding:12px;border-radius:9px;background:#f7f9f6;color:#82907f;font-size:11px}
+.investment-history{margin-top:19px;padding-top:15px;border-top:1px solid #e8ede5}
+.investment-history-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
+.investment-history-heading h3{display:flex;align-items:center}
+.investment-history-heading p{font-size:10px;color:#7f8d76;margin-top:3px}
+.investment-history-heading>strong{font-size:14px;color:#3f7550;white-space:nowrap}
+.investment-event-list{display:grid;gap:7px}
+.investment-event{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 10px;border:1px solid #edf0eb;border-radius:8px;background:#fff}
+.investment-event>span{display:grid;gap:3px;min-width:0}
+.investment-event strong{font-size:10px;color:var(--ink)}
+.investment-event small{font-size:9px;color:#839080;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.investment-event>b{font-size:10px;color:#4f8060;white-space:nowrap}
+.investment-event>b.muted{color:#7f8d76}
+.investment-entry{display:grid;gap:8px;margin:13px 0;padding:14px;border:1px solid #dfe9dc;border-radius:11px;background:#f6faf4}
+.investment-entry>label{margin:0}
+.investment-entry>.checkbox{margin:0;font-weight:600}
+.investment-entry-plan{font-size:10px}
+.income-account-notice{display:grid;gap:6px}
+.income-account-notice .text-link{justify-self:start}
 .guided-footnote{margin-top:16px;padding-top:12px;border-top:1px solid #e6ece3;font-size:10px;color:#929d8e}
 .guided-refine-link{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:0;color:#4c775a;font-size:11px;font-weight:600}
 .guided-refine-link:hover{text-decoration:underline}
@@ -74,4 +108,4 @@
 .install-app-steps li svg{display:inline;vertical-align:-3px;color:#286449}
 .install-app-steps strong,.install-app-help strong{color:#315a44}
 .install-app-message{margin:10px 0 0;color:#356348;font-size:11px}
-@media(max-width:780px){.first-password-card{padding:28px 22px}.first-password-brand{margin-bottom:30px}.guided-setup{padding:20px 17px}.guided-heading h2{font-size:17px}.guided-checklist{grid-template-columns:repeat(2,minmax(0,1fr))}.guided-current-step{padding:16px 13px}.guided-fields{grid-template-columns:1fr;gap:0}.guided-ready{flex-wrap:wrap}.guided-ready>.button{width:100%}}
+@media(max-width:780px){.first-password-card{padding:28px 22px}.first-password-brand{margin-bottom:30px}.guided-setup{padding:20px 17px}.guided-heading h2{font-size:17px}.guided-checklist{grid-template-columns:repeat(2,minmax(0,1fr))}.guided-current-step{padding:16px 13px}.guided-fields{grid-template-columns:1fr;gap:0}.guided-ready{flex-wrap:wrap}.guided-ready>.button{width:100%}.investment-plan-card{align-items:flex-start;flex-direction:column}.investment-plan-actions{width:100%;justify-content:flex-end}}
