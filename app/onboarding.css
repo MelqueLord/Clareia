@@ -131,6 +131,7 @@
 .advanced-entry>label{margin:11px 0}
 .advanced-entry .midmonth-note{font-size:10px}
 .quick-submit{min-height:47px;margin-top:12px}
+.account-edit-link{margin-top:12px}
 .voice-review-summary{margin:0 0 15px;padding:14px;border:1px solid #dce8d8;border-radius:12px;background:#f5f9f2;text-align:left}
 .voice-review-heading{display:flex;align-items:center;gap:8px;color:#426d50;font-size:12px}
 .voice-review-heading span{margin-left:auto;color:#82907d;font-size:10px;font-weight:450}
