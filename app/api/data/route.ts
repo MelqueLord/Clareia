@@ -49,17 +49,18 @@ async function migrateLegacyUser(legacyUserId:string){
 }
 export async function GET(req:Request){
  const user=await getFinanceUser(req);if(!user)return reply({error:'Entre na sua conta para salvar e consultar suas finanças.'},401);if(!env.DB)return reply({error:'Banco de dados indisponível.'},503);
+ if(user.mustChangePassword)return reply({error:'Altere sua senha para continuar.',mustChangePassword:true,user:{id:user.authUserId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:false,mustChangePassword:true}},428);
  try{
   let row=await env.DB.prepare('SELECT payload,revision,updated_at FROM finance_documents WHERE user_id=?').bind(user.userId).first<{payload:string;revision:number;updated_at:string}>();
   if(!row&&'legacyUserId'in user){await migrateLegacyUser(user.legacyUserId);row=await env.DB.prepare('SELECT payload,revision,updated_at FROM finance_documents WHERE user_id=?').bind(user.userId).first<{payload:string;revision:number;updated_at:string}>();}
   const audit=await env.DB.prepare('SELECT action,created_at FROM finance_audit WHERE user_id=? ORDER BY created_at DESC LIMIT 20').bind(user.userId).all();
   const data=row?scopedData(JSON.parse(row.payload) as FinanceData,user.defaultSpace):emptyData();
-  return reply({data,revision:row?.revision||0,updatedAt:row?.updated_at,user:{id:user.userId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:user.isTest},audit:audit.results});
+  return reply({data,revision:row?.revision||0,updatedAt:row?.updated_at,user:{id:user.userId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:user.isTest,mustChangePassword:user.mustChangePassword},audit:audit.results});
  }catch{return reply({error:'Não foi possível carregar seus dados. Tente novamente.'},503);}
 }
 export async function POST(req:Request){
  if(!allowed(req)||!req.headers.get('content-type')?.includes('application/json'))return reply({error:'Origem inválida.'},403);
- const user=await getFinanceUser(req);if(!user)return reply({error:'Sua sessão terminou. Entre novamente.'},401);if(!env.DB)return reply({error:'Banco indisponível.'},503);
+ const user=await getFinanceUser(req);if(!user)return reply({error:'Sua sessão terminou. Entre novamente.'},401);if(user.mustChangePassword)return reply({error:'Altere sua senha antes de acessar seus dados.'},403);if(!env.DB)return reply({error:'Banco indisponível.'},503);
  try{
   const raw=await req.text();if(raw.length>2000000)return reply({error:'Limite de dados excedido.'},413);
   const parsed=saveSchema.safeParse(JSON.parse(raw));if(!parsed.success)return reply({error:parsed.error.issues[0]?.message||'Dados inválidos.'},400);
@@ -79,7 +80,7 @@ export async function POST(req:Request){
 }
 export async function DELETE(req:Request){
  if(!allowed(req)||req.headers.get('x-confirm-delete')!=='EXCLUIR')return reply({error:'Confirmação necessária.'},400);
- const user=await getFinanceUser(req);if(!user)return reply({error:'Sessão necessária.'},401);if(!env.DB)return reply({error:'Banco indisponível.'},503);
+ const user=await getFinanceUser(req);if(!user)return reply({error:'Sessão necessária.'},401);if(user.mustChangePassword)return reply({error:'Altere sua senha antes de acessar seus dados.'},403);if(!env.DB)return reply({error:'Banco indisponível.'},503);
  await env.DB.batch(['finance_documents','finance_snapshots','finance_audit','push_subscriptions'].map(table=>env.DB!.prepare('DELETE FROM '+table+' WHERE user_id=?').bind(user.userId)));
  return reply({deleted:true});
 }

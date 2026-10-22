@@ -12,7 +12,7 @@ export async function getFinanceUser(req: Request) {
     const test = await env.DB.prepare('SELECT user_id AS userId,display_name AS displayName,email,space AS defaultSpace FROM test_sessions WHERE token_hash=? AND expires_at>?')
       .bind(await tokenHash(token), new Date().toISOString())
       .first<{ userId: string; displayName: string; email: string; defaultSpace: Space }>();
-    if (test) return { ...test, isTest: true };
+    if (test) return { ...test, isTest: true, mustChangePassword: false };
   }
 
   if (!env.DB || !env.BETTER_AUTH_SECRET) return null;
@@ -24,10 +24,12 @@ export async function getFinanceUser(req: Request) {
 
   return {
     userId: `personal:${authenticated.user.id}:${space}`,
+    authUserId: authenticated.user.id,
     displayName: authenticated.user.name,
     email: authenticated.user.email,
     defaultSpace: space,
     isTest: false,
+    mustChangePassword: authenticated.user.mustChangePassword === true,
   };
 }
 

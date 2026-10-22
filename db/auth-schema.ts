@@ -17,6 +17,9 @@ export const user = sqliteTable("user", {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   space: text("space", { enum: ["pf", "mei"] }).notNull(),
+  must_change_password: integer("must_change_password", { mode: "boolean" })
+    .default(true)
+    .notNull(),
 });
 
 export const session = sqliteTable(

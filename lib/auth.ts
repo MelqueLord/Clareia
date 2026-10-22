@@ -14,12 +14,19 @@ export const auth = betterAuth({
       emailVerified: "email_verified",
       createdAt: "created_at",
       updatedAt: "updated_at",
+      mustChangePassword: "must_change_password",
     },
     additionalFields: {
       space: {
         type: ["pf", "mei"],
         required: true,
         input: true,
+      },
+      mustChangePassword: {
+        type: "boolean",
+        required: true,
+        defaultValue: true,
+        input: false,
       },
     },
   },
@@ -75,6 +82,11 @@ export const auth = betterAuth({
           if (Object.hasOwn(data, "space")) {
             throw new APIError("BAD_REQUEST", {
               message: "O tipo da conta é fixo após o cadastro.",
+            });
+          }
+          if (Object.hasOwn(data, "mustChangePassword")) {
+            throw new APIError("BAD_REQUEST", {
+              message: "Este campo de acesso não pode ser alterado pelo perfil.",
             });
           }
           return { data };

@@ -98,7 +98,7 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
           <button type="button" aria-pressed={profile === 'mei'} className={profile === 'mei' ? 'selected' : ''} onClick={() => choose('mei')}><span className="profile-choice-icon"><Building2 size={20}/></span><strong>MEI</strong><small>Meu negócio</small>{profile === 'mei' && <Check size={14} className="profile-check"/>}</button>
         </div>
 
-        <p className="test-access-note"><strong>Ambiente de teste:</strong> crie uma conta para validar seu acesso. A venda e a liberação dos planos serão configuradas para a hospedagem.</p>
+        <p className="test-access-note"><strong>Ambiente de teste:</strong> crie uma conta para validar seu acesso. No primeiro login, você deverá escolher uma senha pessoal; depois, a Central de Inteligência guiará o cadastro por texto ou voz. A venda e a liberação dos planos serão configuradas para a hospedagem.</p>
 
         <div className="auth-mode-switch" role="tablist" aria-label="Acesso à conta">
           <button type="button" role="tab" aria-selected={mode === 'login'} className={mode === 'login' ? 'selected' : ''} onClick={() => { setMode('login'); setError(''); }}>Entrar</button>

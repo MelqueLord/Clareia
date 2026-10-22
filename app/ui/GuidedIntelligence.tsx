@@ -1,0 +1,159 @@
+'use client';
+
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import { ArrowRight, Check, CheckCircle2, Mic, Sparkles, Square, Wallet, Building2 } from 'lucide-react';
+import type { FinanceData, Space } from '../../lib/model';
+
+type SpeechLike = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((e: { results: { [n: number]: { [n: number]: { transcript: string } } } }) => void) | null;
+  onerror: ((e: { error: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+const valueFromText = (text: string) => {
+  const match = text.match(/(?:r\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[,.]\d{1,2})?)(?:\s*(mil|k))?/i);
+  if (!match) return null;
+  let value = match[1];
+  if (value.includes(',')) value = value.replace(/\./g, '').replace(',', '.');
+  else if (/\.\d{3}$/.test(value)) value = value.replace(/\./g, '');
+  const parsed = Number(value) * (/^(mil|k)$/i.test(match[2] || '') ? 1000 : 1);
+  return Number.isFinite(parsed) ? Math.round(parsed * 100) : null;
+};
+
+export function guidedSetupStatus(data: FinanceData, space: Space) {
+  const expectedIncome = space === 'pf' ? data.profiles.pf.monthlyIncomeTarget : data.profiles.mei.monthlyRevenueTarget;
+  const source = space === 'pf' ? data.profiles.pf.incomeSource : data.profiles.mei.activity;
+  const hasIncomePlan = !!source.trim() && expectedIncome !== null;
+  const hasAccount = data.accounts.some(account => account.space === space);
+  const hasIncome = data.transactions.some(transaction => transaction.space === space && transaction.type === 'income');
+  const hasExpense = data.transactions.some(transaction => transaction.space === space && transaction.type === 'expense');
+  const steps = [hasIncomePlan, hasAccount, hasIncome, hasExpense];
+  const currentStep = steps.findIndex(done => !done);
+  return { steps, ready: currentStep < 0, currentStep: currentStep < 0 ? steps.length : currentStep, percent: Math.round(steps.filter(Boolean).length / steps.length * 100) };
+}
+
+export default function GuidedIntelligence({
+  data, space, saving, onSave, onAddAccount, onAddTransaction, onOpenSettings, onGoHome,
+}: {
+  data: FinanceData;
+  space: Space;
+  saving: boolean;
+  onSave: (next: FinanceData, action: string) => Promise<boolean>;
+  onAddAccount: () => void;
+  onAddTransaction: (type: 'income' | 'expense') => void;
+  onOpenSettings: () => void;
+  onGoHome: () => void;
+}) {
+  const status = guidedSetupStatus(data, space);
+  const initialSource = space === 'pf' ? data.profiles.pf.incomeSource : data.profiles.mei.activity;
+  const initialAmount = space === 'pf' ? data.profiles.pf.monthlyIncomeTarget : data.profiles.mei.monthlyRevenueTarget;
+  const [note, setNote] = useState('');
+  const [source, setSource] = useState(initialSource);
+  const [amount, setAmount] = useState(initialAmount === null ? '' : String(initialAmount / 100));
+  const [listening, setListening] = useState(false);
+  const [message, setMessage] = useState('');
+  const recognition = useRef<SpeechLike | null>(null);
+  useEffect(() => () => recognition.current?.stop(), []);
+
+  function record() {
+    const browser = window as unknown as { SpeechRecognition?: new () => SpeechLike; webkitSpeechRecognition?: new () => SpeechLike };
+    const Speech = browser.SpeechRecognition || browser.webkitSpeechRecognition;
+    if (!Speech) {
+      setMessage('Este navegador não oferece transcrição por voz. Digite aqui ou use o ditado do teclado.');
+      return;
+    }
+    if (listening) {
+      recognition.current?.stop();
+      return;
+    }
+    const speech = new Speech();
+    speech.lang = 'pt-BR';
+    speech.continuous = false;
+    speech.interimResults = false;
+    speech.onresult = event => setNote(event.results[0][0].transcript);
+    speech.onerror = event => {
+      setMessage(event.error === 'not-allowed' ? 'Permita o microfone nas configurações do navegador para ditar.' : 'Não foi possível transcrever. Tente novamente ou digite sua frase.');
+      setListening(false);
+    };
+    speech.onend = () => setListening(false);
+    recognition.current = speech;
+    try {
+      speech.start();
+      setListening(true);
+      setMessage('');
+    } catch {
+      setMessage('Não foi possível iniciar o microfone.');
+    }
+  }
+
+  function applySentence() {
+    const clean = note.trim();
+    if (!clean) {
+      setMessage('Digite ou dite de onde vem sua renda e o valor mensal aproximado.');
+      return;
+    }
+    setSource(clean.slice(0, space === 'pf' ? 80 : 120));
+    const parsed = valueFromText(clean);
+    if (parsed !== null) setAmount(String(parsed / 100));
+    setMessage(parsed === null ? 'A origem foi preenchida. Informe o valor mensal esperado no campo abaixo.' : 'Confira a origem e o valor que foram preenchidos antes de salvar.');
+  }
+
+  async function saveIncomeProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const target = amount.trim() === '' ? null : Math.round(Number(amount.replace(',', '.')) * 100);
+    if (target === null || !Number.isFinite(target) || target < 0) {
+      setMessage('Informe o valor mensal esperado. Se ainda não recebe, use 0.');
+      return;
+    }
+    const description = source.trim();
+    if (!description) {
+      setMessage(space === 'pf' ? 'Informe a principal fonte de renda.' : 'Informe a atividade que gera ou deverá gerar faturamento.');
+      return;
+    }
+    const next = space === 'pf'
+      ? { ...data, profiles: { ...data.profiles, pf: { ...data.profiles.pf, incomeSource: description, monthlyIncomeTarget: target } } }
+      : { ...data, profiles: { ...data.profiles, mei: { ...data.profiles.mei, activity: description, monthlyRevenueTarget: target } } };
+    if (await onSave(next, 'settings')) setMessage('Receita de referência salva. Agora vamos cadastrar a conta ou o caixa.');
+  }
+
+  const steps = space === 'pf'
+    ? ['Defina sua renda mensal', 'Cadastre uma conta e o saldo atual', 'Registre um recebimento', 'Registre uma despesa ou compromisso']
+    : ['Defina seu faturamento mensal', 'Cadastre uma conta ou caixa do MEI', 'Registre um recebimento do negócio', 'Registre um custo ou compromisso'];
+  const step = status.currentStep;
+  const currentTitle = steps[step] || 'Base inicial pronta';
+
+  return <section className="guided-setup panel">
+    <div className="guided-heading">
+      <span className="guided-icon"><Sparkles size={20}/></span>
+      <div><span className="eyebrow">CENTRAL DE INTELIGÊNCIA · PRIMEIRO ACESSO</span><h2>{status.ready ? 'Sua base inicial está pronta.' : 'Vamos preparar suas finanças juntos.'}</h2><p>{status.ready ? 'Receitas, saldo e despesas já dão ao Clareia uma base para começar a analisar seus dados.' : 'Eu vou pedir os dados em ordem. Você pode digitar ou ditar a primeira informação e revisar antes de salvar.'}</p></div>
+    </div>
+    <div className="guided-progress-row"><div className="guided-progress"><span style={{ width: `${status.percent}%` }}/></div><strong>{status.ready ? '4 de 4 etapas' : `Etapa ${step + 1} de 4`}</strong></div>
+    <div className="guided-checklist">{steps.map((label, index) => <div key={label} className={`guided-check ${status.steps[index] ? 'done' : index === step ? 'current' : ''}`}><span>{status.steps[index] ? <Check size={14}/> : index + 1}</span><small>{label}</small></div>)}</div>
+
+    {!status.ready && <div className="guided-current-step">
+      <div className="guided-step-title">{space === 'mei' ? <Building2 size={18}/> : <Wallet size={18}/>}<div><span className="eyebrow">PRÓXIMO DADO</span><h3>{currentTitle}</h3></div></div>
+      {step === 0 && <form onSubmit={saveIncomeProfile}>
+        <p className="muted">{space === 'pf' ? 'Conte de onde vem sua renda e quanto espera receber por mês. Se sua renda ainda não começou, informe 0.' : 'Conte o que o MEI vende ou presta e quanto espera faturar por mês. Se ainda não faturou, informe 0.'}</p>
+        <label className="guided-note-label">Fale ou digite sua frase<textarea value={note} rows={2} onChange={event => setNote(event.target.value)} placeholder={space === 'pf' ? 'Ex.: Recebo R$ 3.500 por mês de salário' : 'Ex.: Faço bolos e faturo cerca de R$ 4.000 por mês'}/></label>
+        <div className="guided-note-actions"><button type="button" className={`button secondary ${listening ? 'listening-button' : ''}`} onClick={record}>{listening ? <Square size={16}/> : <Mic size={16}/>} {listening ? 'Parar de ouvir' : 'Ditar'}</button><button type="button" className="text-link" disabled={!note.trim()} onClick={applySentence}>Usar frase para preencher <ArrowRight size={14}/></button></div>
+        <div className="form-grid guided-fields"><label>{space === 'pf' ? 'Principal fonte de renda' : 'Atividade que gera faturamento'}<input value={source} onChange={event => setSource(event.target.value)} maxLength={space === 'pf' ? 80 : 120} required placeholder={space === 'pf' ? 'Salário, autônomo, benefício…' : 'Serviços, vendas, alimentação…'}/></label><label>{space === 'pf' ? 'Renda mensal esperada (R$)' : 'Faturamento mensal esperado (R$)'}<input type="number" inputMode="decimal" min="0" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} required placeholder="0,00"/></label></div>
+        <p className="small-text muted">A transcrição pode usar o serviço de voz do navegador. O áudio não é armazenado; revise os campos antes de salvar.</p>
+        {message && <p className="guided-message" role="status">{message}</p>}
+        <button className="button primary" disabled={saving || listening}>{saving ? 'Salvando…' : 'Salvar receita de referência'} <ArrowRight size={16}/></button>
+      </form>}
+      {step === 1 && <div className="guided-action"><p className="muted">Cadastre uma conta bancária, carteira ou caixa do negócio e informe o saldo de hoje. Esse saldo será o ponto de partida das projeções.</p><button className="button primary" onClick={onAddAccount}>Cadastrar conta ou caixa <ArrowRight size={16}/></button></div>}
+      {step === 2 && <div className="guided-action"><p className="muted">Registre uma receita que já recebeu ou um valor que ainda está para entrar. A Central usa isso para distinguir dinheiro confirmado de previsão.</p><button className="button primary" onClick={() => onAddTransaction('income')}>Registrar primeiro recebimento <ArrowRight size={16}/></button></div>}
+      {step === 3 && <div className="guided-action"><p className="muted">Adicione um custo do MEI ou uma despesa pessoal. Se for um compromisso futuro, marque como pendente para ajudar na previsão.</p><button className="button primary" onClick={() => onAddTransaction('expense')}>Registrar primeiro custo ou despesa <ArrowRight size={16}/></button></div>}
+      {message && step !== 0 && <p className="guided-message" role="status">{message}</p>}
+    </div>}
+
+    {status.ready && <div className="guided-ready"><CheckCircle2 size={22}/><div><strong>O Clareia já pode analisar sua base inicial.</strong><p>Continue registrando movimentos para refinar as projeções. Depois, complete os dados pessoais ou do MEI e revise seus gastos essenciais para receber orientações mais precisas.</p></div><button className="button primary" onClick={onGoHome}>Abrir visão geral <ArrowRight size={16}/></button></div>}
+    {!status.ready && <div className="guided-footnote">Você pode pausar e voltar a esta central quando quiser. Dados só são salvos depois que você confirma cada etapa.</div>}
+    {status.ready && <button className="guided-refine-link" onClick={onOpenSettings}>Refinar perfil e preferências <ArrowRight size={14}/></button>}
+  </section>;
+}
