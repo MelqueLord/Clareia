@@ -14,7 +14,6 @@ export const auth = betterAuth({
       emailVerified: "email_verified",
       createdAt: "created_at",
       updatedAt: "updated_at",
-      mustChangePassword: "must_change_password",
     },
     additionalFields: {
       space: {
@@ -27,6 +26,7 @@ export const auth = betterAuth({
         required: true,
         defaultValue: true,
         input: false,
+        fieldName: "must_change_password",
       },
     },
   },
