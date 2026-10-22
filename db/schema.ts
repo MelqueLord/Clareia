@@ -5,3 +5,4 @@ export const testSessions=sqliteTable('test_sessions',{tokenHash:text('token_has
 export const financeDocuments = sqliteTable('finance_documents',{userId:text('user_id').primaryKey(),payload:text('payload').notNull(),revision:integer('revision').notNull(),mutationId:text('mutation_id').notNull(),updatedAt:text('updated_at').notNull()});
 export const snapshots = sqliteTable('finance_snapshots',{id:text('id').primaryKey(),userId:text('user_id').notNull(),payload:text('payload').notNull(),createdAt:text('created_at').notNull()});
 export const audit = sqliteTable('finance_audit',{id:text('id').primaryKey(),userId:text('user_id').notNull(),action:text('action').notNull(),createdAt:text('created_at').notNull()});
+export { user, session, account, verification, rateLimit } from './auth-schema';

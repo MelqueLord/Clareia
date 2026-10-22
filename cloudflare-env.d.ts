@@ -4,5 +4,8 @@ declare namespace Cloudflare {
     VAPID_PRIVATE_JWK?: string;
     DB?: D1Database;
     BUCKET?: R2Bucket;
+    BETTER_AUTH_SECRET?: string;
+    BETTER_AUTH_URL?: string;
+    AUTH_SIGNUP_ENABLED?: string;
   }
 }
