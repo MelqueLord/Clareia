@@ -2,15 +2,16 @@ import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { env } from "cloudflare:workers";
 
-// Keep builds usable without local credentials. Production auth routes fail
-// closed unless BETTER_AUTH_SECRET is configured, so this value is never a
-// shared or persistent production secret.
-const ephemeralBuildSecret = crypto.randomUUID() + crypto.randomUUID();
+// Keep builds usable without local credentials. Cloudflare forbids generating
+// random values during module initialization. Every production auth route
+// checks BETTER_AUTH_SECRET before calling Better Auth, so this fixed fallback
+// is only used by local builds and is never accepted for production requests.
+const buildOnlySecret = "clareia-build-only-secret-not-for-production";
 
 export const auth = betterAuth({
   database: env.DB!,
   baseURL: env.BETTER_AUTH_URL || "http://localhost:3000",
-  secret: env.BETTER_AUTH_SECRET || ephemeralBuildSecret,
+  secret: env.BETTER_AUTH_SECRET || buildOnlySecret,
   trustedOrigins: env.BETTER_AUTH_URL ? [env.BETTER_AUTH_URL] : undefined,
   user: {
     fields: {
