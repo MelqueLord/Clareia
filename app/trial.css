@@ -1,0 +1,54 @@
+.auth-mode-toggle{display:block;width:100%;margin-top:13px;padding:9px;color:#28614c;font-size:11px;font-weight:650;text-align:center}
+.auth-mode-toggle:hover{text-decoration:underline}
+.trial-countdown{display:flex;align-items:center;gap:8px;margin:12px 24px 0;padding:10px 13px;border:1px solid #d9e8d6;border-radius:11px;background:#f4f8ef;color:#49634f;font-size:11px}
+.trial-countdown>svg{color:#67936a}
+.trial-countdown strong{color:#285944}
+.trial-countdown small{margin-left:auto;color:#78867a;font-size:10px}
+.trial-gate{display:grid;place-items:center;min-height:100dvh;padding:28px;background:radial-gradient(ellipse at top right,#e6f1e1 0,transparent 44%),#f5f8f6}
+.trial-gate-card{width:min(100%,560px);padding:clamp(24px,5vw,42px);border:1px solid #e1e9df;border-radius:24px;background:#fff;box-shadow:0 24px 70px #183c2c10}
+.trial-gate-icon{display:grid;place-items:center;width:52px;height:52px;margin-bottom:22px;border-radius:17px;background:#edf4e8;color:#4a7955}
+.trial-gate-card>.eyebrow{display:block;margin-bottom:10px;color:#789077;font-size:9px;font-weight:740;letter-spacing:1.1px}
+.trial-gate-card h1{max-width:440px;color:#193d32;font-size:clamp(28px,5vw,38px);letter-spacing:-1.4px;line-height:1.14}
+.trial-gate-lead{margin-top:13px;color:#708078;font-size:13px;line-height:1.8}
+.trial-gate-lead strong{color:#365a47}
+.trial-gate-plan{display:flex;align-items:center;gap:13px;margin:25px 0 14px;padding:16px;border:1px solid #e1e9df;border-radius:15px;background:#fbfcfa}
+.trial-gate-plan-icon{display:grid;place-items:center;width:43px;height:43px;border-radius:13px;background:#edf4e9;color:#4c7c58}
+.trial-gate-plan>div{display:grid;gap:4px}
+.trial-gate-plan small{color:#87948a;font-size:8px;font-weight:700;letter-spacing:1px}
+.trial-gate-plan strong{color:#244f40;font-size:23px;letter-spacing:-.5px}
+.trial-gate-plan strong span{margin-left:4px;color:#87948a;font-size:10px;font-weight:500;letter-spacing:0}
+.trial-gate-plan-tag{margin-left:auto;color:#728278;font-size:10px}
+.trial-gate-cta{display:flex;width:100%;min-height:48px;align-items:center;justify-content:center;gap:8px;border-radius:11px;font-size:12px}
+.trial-gate-checkout{margin-top:12px;padding:12px;border-radius:10px;background:#fff8e9;color:#785d2c;font-size:11px;line-height:1.65}
+.trial-gate-data-note{display:flex;align-items:flex-start;gap:8px;margin-top:16px;color:#718177;font-size:10px;line-height:1.6}
+.trial-gate-data-note svg{color:#6d956d}
+.trial-gate-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid #edf0eb}
+.trial-gate-actions .button{font-size:10px}
+.trial-gate-actions .text-link{display:flex;align-items:center;gap:6px;color:#6d7c73;font-size:10px}
+.trial-gate-account{display:block;margin-top:20px;color:#a0aaa2;font-size:9px;text-align:center}
+@media(max-width:600px){.trial-countdown{margin:9px 14px 0;font-size:10px}.trial-countdown small{font-size:9px}.trial-gate{padding:15px}.trial-gate-card{padding:23px 19px;border-radius:20px}.trial-gate-lead{font-size:12px}.trial-gate-plan-tag{display:none}.trial-gate-actions{align-items:stretch;flex-direction:column}.trial-gate-actions .button{justify-content:center}}
+.trial-admin{grid-column:1/-1}
+.trial-admin-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.trial-admin-heading>div{display:flex;align-items:center;gap:11px}
+.trial-admin-heading p{margin-top:4px;color:#7b8980;font-size:11px}
+.trial-admin-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#edf4e9;color:#52805b}
+.trial-admin-list{display:grid;gap:9px}
+.trial-admin-row{display:grid;grid-template-columns:minmax(190px,1.1fr) minmax(155px,.8fr) minmax(250px,1.4fr);align-items:center;gap:15px;padding:13px;border:1px solid #e9eee8;border-radius:12px;background:#fcfdfb}
+.trial-admin-user{display:flex;align-items:center;gap:9px;min-width:0}
+.trial-admin-avatar{display:grid;place-items:center;flex:0 0 34px;height:34px;border-radius:11px;background:#edf4e9;color:#58815d}
+.trial-admin-user>div,.trial-admin-status{display:grid;gap:4px;min-width:0}
+.trial-admin-user strong{overflow:hidden;color:#365346;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.trial-admin-user small,.trial-admin-status small{overflow-wrap:anywhere;color:#849087;font-size:9px;line-height:1.5}
+.trial-admin-status{justify-items:start}
+.trial-status-pill{display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border-radius:99px;font-size:9px;font-weight:650;white-space:nowrap}
+.trial-status-pill.trialing{background:#eff5e8;color:#59824f}
+.trial-status-pill.active{background:#e8f4ee;color:#287454}
+.trial-status-pill.blocked{background:#f4f0ea;color:#88734f}
+.trial-admin-status .trial-request-date{color:#715c34;font-weight:620}
+.trial-admin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}
+.trial-admin-actions .button{min-height:32px;padding:7px 9px;border-radius:8px;font-size:9px}
+.trial-admin-actions .danger-button{min-height:32px;padding:7px 9px;font-size:9px}
+.trial-admin-message{margin:0 0 10px;color:#367450;font-size:10px}
+.trial-admin-message.error{color:#b84a3c}
+@media(max-width:900px){.trial-admin-row{grid-template-columns:minmax(170px,1fr) minmax(145px,.8fr)}.trial-admin-actions{grid-column:1/-1;justify-content:flex-start}}
+@media(max-width:600px){.trial-admin-heading{align-items:flex-start}.trial-admin-heading p{font-size:10px}.trial-admin-row{grid-template-columns:1fr;gap:10px}.trial-admin-actions{grid-column:auto}.trial-admin-actions .button{flex:1;justify-content:center}}

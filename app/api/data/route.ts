@@ -3,6 +3,8 @@ import { getFinanceUser } from '../../../lib/session';
 import { emptyData } from '../../../lib/model';
 import type { FinanceData, Space } from '../../../lib/model';
 import { saveSchema } from '../../../lib/validation';
+import { demoAccess, getAccountAccess } from '../../../lib/trial';
+import { isTrialAdmin } from '../../../lib/trial-admin';
 export const dynamic='force-dynamic';
 const reply=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 function allowed(req:Request){const origin=req.headers.get('origin');return !origin||origin===new URL(req.url).origin;}
@@ -51,17 +53,19 @@ export async function GET(req:Request){
  const user=await getFinanceUser(req);if(!user)return reply({error:'Entre na sua conta para salvar e consultar suas finanças.'},401);if(!env.DB)return reply({error:'Banco de dados indisponível.'},503);
  if(user.mustChangePassword)return reply({error:'Altere sua senha para continuar.',mustChangePassword:true,user:{id:user.authUserId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:false,mustChangePassword:true}},428);
  try{
+  const access=user.isTest?demoAccess:await getAccountAccess(user.authUserId!);
   let row=await env.DB.prepare('SELECT payload,revision,updated_at FROM finance_documents WHERE user_id=?').bind(user.userId).first<{payload:string;revision:number;updated_at:string}>();
   if(!row&&'legacyUserId'in user&&typeof user.legacyUserId==='string'){await migrateLegacyUser(user.legacyUserId);row=await env.DB.prepare('SELECT payload,revision,updated_at FROM finance_documents WHERE user_id=?').bind(user.userId).first<{payload:string;revision:number;updated_at:string}>();}
   const audit=await env.DB.prepare('SELECT action,created_at FROM finance_audit WHERE user_id=? ORDER BY created_at DESC LIMIT 20').bind(user.userId).all();
   const data=row?scopedData(JSON.parse(row.payload) as FinanceData,user.defaultSpace):emptyData();
-  return reply({data,revision:row?.revision||0,updatedAt:row?.updated_at,user:{id:user.userId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:user.isTest,mustChangePassword:user.mustChangePassword},audit:audit.results});
+  return reply({data,revision:row?.revision||0,updatedAt:row?.updated_at,user:{id:user.userId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:user.isTest,mustChangePassword:user.mustChangePassword,isAdmin:!user.isTest&&isTrialAdmin(user.email)},access,audit:audit.results});
  }catch{return reply({error:'Não foi possível carregar seus dados. Tente novamente.'},503);}
 }
 export async function POST(req:Request){
  if(!allowed(req)||!req.headers.get('content-type')?.includes('application/json'))return reply({error:'Origem inválida.'},403);
  const user=await getFinanceUser(req);if(!user)return reply({error:'Sua sessão terminou. Entre novamente.'},401);if(user.mustChangePassword)return reply({error:'Altere sua senha antes de acessar seus dados.'},403);if(!env.DB)return reply({error:'Banco indisponível.'},503);
  try{
+  if(!user.isTest){const access=await getAccountAccess(user.authUserId!);if(!access.canUse)return reply({error:'Seu teste grátis terminou. Escolha um plano para continuar.',code:'TRIAL_EXPIRED'},402);}
   const raw=await req.text();if(raw.length>2000000)return reply({error:'Limite de dados excedido.'},413);
   const parsed=saveSchema.safeParse(JSON.parse(raw));if(!parsed.success)return reply({error:parsed.error.issues[0]?.message||'Dados inválidos.'},400);
   const data=scopedData(parsed.data.data as FinanceData,user.defaultSpace),{revision,mutationId,action}=parsed.data,now=new Date().toISOString();

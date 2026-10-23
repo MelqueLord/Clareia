@@ -28,7 +28,7 @@ export const auth = betterAuth({
       mustChangePassword: {
         type: "boolean",
         required: true,
-        defaultValue: true,
+        defaultValue: false,
         input: false,
         fieldName: "must_change_password",
       },

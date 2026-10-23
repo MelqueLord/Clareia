@@ -3,6 +3,7 @@ import "./globals.css";
 import "./intelligence.css";
 import "./onboarding.css";
 import "./landing.css";
+import "./trial.css";
 
 export const metadata: Metadata = {
   title: "Clareia · Organize suas finanças por áudio e com inteligência",

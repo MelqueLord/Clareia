@@ -7,5 +7,7 @@ declare namespace Cloudflare {
     BETTER_AUTH_SECRET?: string;
     BETTER_AUTH_URL?: string;
     AUTH_SIGNUP_ENABLED?: string;
+    TRIAL_DURATION_DAYS?: string;
+    TRIAL_ADMIN_EMAIL?: string;
   }
 }

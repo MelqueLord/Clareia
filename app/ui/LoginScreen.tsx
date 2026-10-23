@@ -10,8 +10,11 @@ type InstallPrompt = { prompt: () => Promise<void>; userChoice: Promise<{ outcom
 
 export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: { onLogin: () => void; installPrompt: InstallPrompt | null; onInstallUsed: () => void }) {
   const [profile, setProfile] = useState<Space>('pf');
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [demoPassword, setDemoPassword] = useState('Clareia2026!');
   const [showPassword, setShowPassword] = useState(false);
   const [showDemoPassword, setShowDemoPassword] = useState(false);
@@ -36,20 +39,30 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
     window.setTimeout(() => document.getElementById('demo-access')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40);
   }
 
+  function startTrial(p: Space = profile) {
+    choose(p);
+    setMode('signup');
+    window.setTimeout(() => document.getElementById('acesso')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40);
+  }
+
   async function submitAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError('');
     try {
-      const result = await authClient.signIn.email({ email: email.trim(), password });
+      if (mode === 'signup' && password !== confirmPassword) throw new Error('As senhas não conferem.');
+      const normalizedEmail = email.trim().toLowerCase();
+      const result = mode === 'signup'
+        ? await authClient.signUp.email({ email: normalizedEmail, password, name: name.trim() || normalizedEmail.split('@')[0], space: profile })
+        : await authClient.signIn.email({ email: normalizedEmail, password });
 
-      if (result.error) throw new Error(result.error.message || 'Não foi possível entrar.');
+      if (result.error) throw new Error(result.error.message || (mode === 'signup' ? 'Não foi possível criar sua conta.' : 'Não foi possível entrar.'));
       const accountSpace = result.data?.user?.space;
       if (accountSpace && accountSpace !== profile) {
         await authClient.signOut();
         throw new Error(`Este e-mail já está cadastrado para ${accountSpace === 'mei' ? 'MEI' : 'pessoa física'}. Escolha esse acesso para entrar.`);
       }
-      if (!result.data?.user) throw new Error('Não recebemos a confirmação da sua conta. Tente novamente.');
+      if (!result.data?.user) throw new Error(mode === 'signup' ? 'Não foi possível iniciar seu teste. Tente novamente.' : 'Não recebemos a confirmação da sua conta. Tente novamente.');
       onLogin();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível entrar. Tente novamente.');
@@ -83,7 +96,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
       <div className="landing-nav-inner">
         <a className="landing-brand" href="#inicio" aria-label="Clareia, início"><span><Compass size={21}/></span>clareia<span className="landing-brand-dot">.</span></a>
         <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#planos">Para quem</a><a href="#duvidas">Dúvidas</a></nav>
-        <div className="landing-nav-actions"><a className="landing-login-link" href="#acesso">Já tenho acesso</a><button className="landing-nav-cta" type="button" onClick={() => openDemoFor()} >Experimentar grátis<ArrowRight size={15}/></button></div>
+        <div className="landing-nav-actions"><a className="landing-login-link" href="#acesso" onClick={() => setMode('login')}>Já tenho acesso</a><button className="landing-nav-cta" type="button" onClick={() => startTrial()} >Testar 30 dias grátis<ArrowRight size={15}/></button></div>
       </div>
     </header>
 
@@ -93,8 +106,8 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
           <span className="landing-eyebrow"><Sparkles size={14}/> FINANÇAS MAIS CLARAS, MESMO COM POUCO TEMPO</span>
           <h1>Organizar seu dinheiro pode caber na sua rotina.</h1>
           <p className="landing-hero-lead">Fale o que recebeu ou gastou. O Clareia prepara o lançamento e a Central de Inteligência ajuda você a entender o mês e escolher o próximo passo.</p>
-          <div className="landing-hero-actions"><button type="button" className="landing-primary-cta" onClick={() => openDemoFor()}><Mic size={17}/> Testar com áudio na demonstração <ArrowRight size={17}/></button><a href="#como-funciona" className="landing-text-cta">Ver como funciona <ArrowUpRight size={15}/></a></div>
-          <div className="landing-trust-note"><ShieldCheck size={17}/><span>Teste gratuito com dados fictícios. Sem informar cartão.</span></div>
+          <div className="landing-hero-actions"><button type="button" className="landing-primary-cta" onClick={() => startTrial()}><Mic size={17}/> Criar conta e testar 30 dias <ArrowRight size={17}/></button><a href="#como-funciona" className="landing-text-cta">Ver como funciona <ArrowUpRight size={15}/></a></div>
+          <div className="landing-trust-note"><ShieldCheck size={17}/><span>30 dias grátis, sem cartão e sem cobrança automática.</span></div>
         </div>
 
         <div className="landing-product" aria-label="Exemplo ilustrativo do Clareia">
@@ -105,7 +118,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
         </div>
       </section>
 
-      <section className="landing-offer" aria-label="Oferta de demonstração"><div className="landing-offer-icon"><CheckCircle2 size={20}/></div><div><span>COMECE SEM COMPLICAÇÃO</span><strong>Experimente o Clareia antes de assinar.</strong><p>Teste a organização por áudio e veja a Central de Inteligência em ação, sem informar cartão. Planos mensais a partir de R$ 19,90.</p></div><button type="button" onClick={() => openDemoFor()}>Quero experimentar <ArrowRight size={16}/></button></section>
+      <section className="landing-offer" aria-label="Teste grátis"><div className="landing-offer-icon"><CheckCircle2 size={20}/></div><div><span>COMECE SEM COMPLICAÇÃO</span><strong>30 dias para organizar suas finanças no seu ritmo.</strong><p>Crie sua conta PF ou MEI, registre por áudio ou texto e conheça a orientação da Central de Inteligência. Sem cartão e sem cobrança automática.</p></div><button type="button" onClick={() => startTrial()}>Começar teste grátis <ArrowRight size={16}/></button></section>
 
       <section id="como-funciona" className="landing-section landing-how">
         <div className="landing-section-heading"><span className="landing-eyebrow">MENOS FORMULÁRIO. MAIS DIREÇÃO.</span><h2>Você fala. O Clareia organiza. Você decide.</h2><p>Uma rotina financeira que começa simples e ganha clareza conforme você usa.</p></div>
@@ -117,37 +130,40 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
       </section>
 
       <section className="landing-voice-band">
-        <div className="landing-voice-orb"><Mic size={27}/></div><div><span className="landing-eyebrow">UMA FRASE JÁ É UM COMEÇO</span><h2>Sem tempo para preencher tudo? Conte o que aconteceu.</h2><p>O Clareia transforma sua fala em um rascunho para revisar. Você continua no controle e confirma cada lançamento.</p></div><button type="button" onClick={() => openDemoFor()}>Experimentar por voz <ArrowRight size={16}/></button>
+        <div className="landing-voice-orb"><Mic size={27}/></div><div><span className="landing-eyebrow">UMA FRASE JÁ É UM COMEÇO</span><h2>Sem tempo para preencher tudo? Conte o que aconteceu.</h2><p>O Clareia transforma sua fala em um rascunho para revisar. Você continua no controle e confirma cada lançamento.</p></div><button type="button" onClick={() => startTrial()}>Testar por voz grátis <ArrowRight size={16}/></button>
       </section>
 
       <section id="planos" className="landing-section landing-plans">
         <div className="landing-section-heading"><span className="landing-eyebrow">PLANOS MENSAIS · PERFIS SEPARADOS</span><h2>Sua vida pessoal e seu MEI, cada um no seu lugar.</h2><p>Escolha o espaço que faz sentido para você. Cada perfil tem acesso e informações independentes.</p></div>
         <div className="landing-plan-grid">
-          <article className="landing-plan-card"><div className="landing-plan-icon"><Wallet size={21}/></div><span className="landing-plan-label">PESSOA FÍSICA</span><h3>Suas finanças pessoais</h3><div className="landing-plan-price"><strong>R$ 19,90</strong><span>/ mês</span></div><p>Renda, contas do mês, cartão, metas para guardar e comparações para cuidar melhor do seu dinheiro.</p><ul><li><Check size={15}/> Receitas e despesas pessoais</li><li><Check size={15}/> Metas mensais e reserva</li><li><Check size={15}/> Comparações e próximos passos</li></ul><button type="button" className="landing-plan-cta" onClick={() => openDemoFor('pf')}>Experimentar o plano PF <ArrowRight size={15}/></button></article>
-          <article className="landing-plan-card landing-plan-mei"><div className="landing-plan-icon"><Building2 size={21}/></div><span className="landing-plan-label">MEI</span><h3>O caixa do seu negócio</h3><div className="landing-plan-price"><strong>R$ 29,90</strong><span>/ mês</span></div><p>Entradas, gastos, contas, cartões e previsões para enxergar o movimento do seu negócio.</p><ul><li><Check size={15}/> Receitas e despesas do MEI</li><li><Check size={15}/> Contas, cartões e compromissos</li><li><Check size={15}/> Visão do caixa e orientação</li></ul><button type="button" className="landing-plan-cta" onClick={() => openDemoFor('mei')}>Experimentar o plano MEI <ArrowRight size={15}/></button></article>
+          <article className="landing-plan-card"><div className="landing-plan-icon"><Wallet size={21}/></div><span className="landing-plan-label">PESSOA FÍSICA</span><h3>Suas finanças pessoais</h3><div className="landing-plan-price"><strong>R$ 19,90</strong><span>/ mês após o teste</span></div><p>Renda, contas do mês, cartão, metas para guardar e comparações para cuidar melhor do seu dinheiro.</p><ul><li><Check size={15}/> Receitas e despesas pessoais</li><li><Check size={15}/> Metas mensais e reserva</li><li><Check size={15}/> Comparações e próximos passos</li></ul><button type="button" className="landing-plan-cta" onClick={() => startTrial('pf')}>Testar PF por 30 dias <ArrowRight size={15}/></button></article>
+          <article className="landing-plan-card landing-plan-mei"><div className="landing-plan-icon"><Building2 size={21}/></div><span className="landing-plan-label">MEI</span><h3>O caixa do seu negócio</h3><div className="landing-plan-price"><strong>R$ 29,90</strong><span>/ mês após o teste</span></div><p>Entradas, gastos, contas, cartões e previsões para enxergar o movimento do seu negócio.</p><ul><li><Check size={15}/> Receitas e despesas do MEI</li><li><Check size={15}/> Contas, cartões e compromissos</li><li><Check size={15}/> Visão do caixa e orientação</li></ul><button type="button" className="landing-plan-cta" onClick={() => startTrial('mei')}>Testar MEI por 30 dias <ArrowRight size={15}/></button></article>
         </div>
-        <p className="landing-plan-footnote"><LockKeyhole size={14}/> Cobrança mensal planejada. As assinaturas PF e MEI são separadas; a demonstração é grátis, compartilhada e usa dados fictícios. Checkout em configuração.</p>
+        <p className="landing-plan-footnote"><LockKeyhole size={14}/> O teste não solicita cartão e não gera cobrança automática. Ao final, escolha se deseja assinar; seus dados permanecem salvos.</p>
       </section>
 
-      <section className="landing-final-cta"><span className="landing-eyebrow">COMECE PELO QUE ESTÁ AO SEU ALCANCE</span><h2>Um pouco mais de clareza já muda a próxima decisão.</h2><p>Experimente com dados de exemplo e veja se o Clareia combina com sua rotina.</p><button type="button" className="landing-primary-cta" onClick={() => openDemoFor()}><Mic size={17}/> Abrir demonstração grátis <ArrowRight size={17}/></button></section>
+      <section className="landing-final-cta"><span className="landing-eyebrow">COMECE PELO QUE ESTÁ AO SEU ALCANCE</span><h2>Um pouco mais de clareza já muda a próxima decisão.</h2><p>Crie sua conta e experimente por 30 dias, sem informar cartão.</p><button type="button" className="landing-primary-cta" onClick={() => startTrial()}><Mic size={17}/> Criar conta grátis <ArrowRight size={17}/></button></section>
 
-      <section id="duvidas" className="landing-faq"><div className="landing-section-heading"><span className="landing-eyebrow">DÚVIDAS RÁPIDAS</span><h2>Começar pode ser simples.</h2></div><div className="landing-faq-grid"><details><summary>Preciso preencher tudo de uma vez?</summary><p>Não. Você pode começar pelo que já sabe e completar as informações aos poucos. A Central mostra a próxima etapa sugerida.</p></details><details><summary>O áudio substitui minha revisão?</summary><p>Não. A fala vira um rascunho para você conferir e confirmar antes de salvar.</p></details><details><summary>Pessoa física e MEI ficam misturados?</summary><p>Não. Cada perfil tem um acesso e um conjunto de dados separado.</p></details><details><summary>O Clareia guarda minha gravação?</summary><p>O Clareia não armazena o áudio. O reconhecimento de voz depende do navegador e pode usar um serviço externo para transcrever.</p></details></div></section>
+      <section id="duvidas" className="landing-faq"><div className="landing-section-heading"><span className="landing-eyebrow">DÚVIDAS RÁPIDAS</span><h2>Começar pode ser simples.</h2></div><div className="landing-faq-grid"><details><summary>Como funciona o teste grátis?</summary><p>São 30 dias após o primeiro acesso, sem informar cartão. No fim, você escolhe se quer assinar; não há cobrança automática.</p></details><details><summary>Preciso preencher tudo de uma vez?</summary><p>Não. Você pode começar pelo que já sabe e completar as informações aos poucos. A Central mostra a próxima etapa sugerida.</p></details><details><summary>O áudio substitui minha revisão?</summary><p>Não. A fala vira um rascunho para você conferir e confirmar antes de salvar.</p></details><details><summary>Pessoa física e MEI ficam misturados?</summary><p>Não. Cada perfil tem um acesso e um conjunto de dados separado.</p></details><details><summary>O Clareia guarda minha gravação?</summary><p>O Clareia não armazena o áudio. O reconhecimento de voz depende do navegador e pode usar um serviço externo para transcrever.</p></details></div></section>
 
       <section id="acesso" className="landing-access">
-        <div className="landing-access-intro"><span className="landing-eyebrow">SUA PRÓXIMA ETAPA</span><h2>Entre ou conheça a demonstração.</h2><p>Escolha o perfil que quer explorar. Para usar seus próprios dados, entre com o acesso correspondente.</p><div className="landing-access-note"><ShieldCheck size={18}/><span>A demonstração usa dados fictícios. Não informe senhas bancárias nem dados de cartão.</span></div></div>
+        <div className="landing-access-intro"><span className="landing-eyebrow">SUA PRÓXIMA ETAPA</span><h2>Entre ou comece seu teste grátis.</h2><p>Escolha PF ou MEI. Cada conta tem seu próprio acesso, dados e período de teste.</p><div className="landing-access-note"><ShieldCheck size={18}/><span>30 dias grátis, sem informar cartão e sem cobrança automática.</span></div></div>
         <div className="landing-auth-card">
-          <div className="landing-auth-heading"><span>ACESSO CLAREIA</span><h3>Bem-vindo ao seu próximo passo.</h3><p>Cada conta está ligada a um perfil financeiro.</p></div>
+          <div className="landing-auth-heading"><span>ACESSO CLAREIA</span><h3>{mode === 'signup' ? 'Comece com 30 dias grátis.' : 'Bem-vindo ao seu próximo passo.'}</h3><p>Cada conta está ligada a um perfil financeiro.</p></div>
           <div className="profile-choices" role="group" aria-label="Tipo de acesso">
             <button type="button" aria-pressed={profile === 'pf'} className={profile === 'pf' ? 'selected' : ''} onClick={() => choose('pf')}><span className="profile-choice-icon"><Wallet size={20}/></span><strong>Pessoa física</strong><small>Minha vida pessoal</small>{profile === 'pf' && <Check size={14} className="profile-check"/>}</button>
             <button type="button" aria-pressed={profile === 'mei'} className={profile === 'mei' ? 'selected' : ''} onClick={() => choose('mei')}><span className="profile-choice-icon"><Building2 size={20}/></span><strong>MEI</strong><small>Meu negócio</small>{profile === 'mei' && <Check size={14} className="profile-check"/>}</button>
           </div>
-          <form className="account-auth-form" onSubmit={submitAccount}>
+          <form id="account-auth-form" className="account-auth-form" onSubmit={submitAccount}>
+            {mode === 'signup' && <label>Como podemos chamar você?<input type="text" autoComplete="name" value={name} onChange={event => setName(event.target.value)} maxLength={80} required/></label>}
             <label>E-mail<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} maxLength={254} required/></label>
-            <label>Senha<div className="password-field"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} minLength={8} maxLength={128} required/><button type="button" aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div></label>
+            <label>Senha<div className="password-field"><input type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={event => setPassword(event.target.value)} minLength={8} maxLength={128} required/><button type="button" aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div></label>
+            {mode === 'signup' && <label>Confirme a senha<div className="password-field"><input type="password" autoComplete="new-password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} minLength={8} maxLength={128} required/></div></label>}
             {error && <p role="alert" className="login-error">{error}</p>}
-            <button className="button primary login-submit" disabled={busy}>{busy ? 'Aguarde…' : `Entrar como ${profileName}`}<ArrowRight size={18}/></button>
+            <button className="button primary login-submit" disabled={busy}>{busy ? 'Aguarde…' : mode === 'signup' ? `Criar conta ${profile === 'mei' ? 'MEI' : 'PF'} grátis` : `Entrar como ${profileName}`}<ArrowRight size={18}/></button>
           </form>
-          <p className="test-access-note"><strong>Novos acessos:</strong> a liberação de assinaturas está sendo preparada. Use a demonstração para conhecer o Clareia.</p>
+          <button className="auth-mode-toggle" type="button" onClick={() => {setMode(mode === 'signup' ? 'login' : 'signup');setError('');}}>{mode === 'signup' ? 'Já tem uma conta? Entrar' : 'Ainda não tem conta? Começar 30 dias grátis'}</button>
+          {mode === 'signup' && <p className="test-access-note"><strong>Teste grátis por 30 dias.</strong> Não pedimos cartão e não fazemos cobrança automática. No fim, você escolhe se quer assinar.</p>}
           <div className="login-note"><LockKeyhole size={16}/><p>Para usar PF e MEI separadamente, cada perfil precisa de sua própria conta.</p></div>
           <details id="demo-access" className="demo-access" open={demoOpen} onToggle={event => setDemoOpen(event.currentTarget.open)}>
             <summary>Testar com uma conta de demonstração</summary>

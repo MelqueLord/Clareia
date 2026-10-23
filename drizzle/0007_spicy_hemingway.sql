@@ -1,0 +1,1 @@
+ALTER TABLE `account_access` ADD `subscription_requested_at` integer;
