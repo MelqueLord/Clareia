@@ -85,6 +85,7 @@
 .landing-plan-icon{display:grid;place-items:center;width:42px;height:42px;margin-bottom:17px;border-radius:14px;background:#edf4e9;color:#477757}
 .landing-plan-label{color:#87958a;font-size:8px;font-weight:760;letter-spacing:1.2px}
 .landing-plan-card h3{margin:7px 0;color:#264b3f;font-size:19px;letter-spacing:-.5px}
+.landing-plan-price{display:flex;align-items:baseline;gap:5px;margin:7px 0 11px;color:#244f40}.landing-plan-price strong{font-size:29px;letter-spacing:-1.1px}.landing-plan-price span{color:#85938a;font-size:10px}
 .landing-plan-card>p{min-height:49px;color:#77867d;font-size:10px;line-height:1.7}
 .landing-plan-card ul{display:grid;gap:11px;margin:18px 0 21px;padding:16px 0;border-top:1px solid #edf0eb;border-bottom:1px solid #edf0eb;list-style:none}
 .landing-plan-card li{display:flex;align-items:center;gap:8px;color:#5d7466;font-size:10px}
