@@ -5,10 +5,22 @@ import { sessionCookie,tokenHash } from '../../../lib/session';
 export const dynamic='force-dynamic';
 const reply=(body:unknown,status=200,cookie?:string)=>Response.json(body,{status,headers:{'Cache-Control':'no-store',...(cookie?{'Set-Cookie':cookie}:{})}});
 function allowed(req:Request){return !req.headers.get('origin')||req.headers.get('origin')===new URL(req.url).origin;}
+async function demoRateLimitExceeded(req:Request){
+ const ip=req.headers.get('cf-connecting-ip');
+ if(!ip||!env.DB||!env.BETTER_AUTH_SECRET)return false;
+ const hmacKey=await crypto.subtle.importKey('raw',new TextEncoder().encode(env.BETTER_AUTH_SECRET),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const digest=new Uint8Array(await crypto.subtle.sign('HMAC',hmacKey,new TextEncoder().encode(ip)));
+ const key='demo-login:'+Array.from(digest,b=>b.toString(16).padStart(2,'0')).join('');
+ const now=Date.now(),windowMs=15*60*1000;
+ const row=await env.DB.prepare(`INSERT INTO rate_limit(id,key,count,last_request) VALUES(?,?,1,?) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN last_request<=? THEN 1 ELSE MIN(count+1,21) END,last_request=? RETURNING count`).bind(key,key,now,now-windowMs,now).first<{count:number}>();
+ if(row?.count===1)await env.DB.prepare("DELETE FROM rate_limit WHERE key LIKE 'demo-login:%' AND last_request<?").bind(now-86400000).run();
+ return (row?.count||0)>20;
+}
 export async function POST(req:Request){
  if(!allowed(req)||!req.headers.get('content-type')?.includes('application/json'))return reply({error:'Origem inválida.'},403);
  if(!env.DB)return reply({error:'Serviço temporariamente indisponível.'},503);
  try{
+  if(await demoRateLimitExceeded(req))return reply({error:'Muitas tentativas de demonstração. Aguarde 15 minutos e tente novamente.'},429);
   const raw=await req.text();if(raw.length>1000)return reply({error:'Dados inválidos.'},400);
   const {username,password}=JSON.parse(raw);
   const space=username==='pf@teste.clareia.app'?'pf':username==='mei@teste.clareia.app'?'mei':null;

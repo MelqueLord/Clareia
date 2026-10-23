@@ -6,13 +6,10 @@ import { authClient } from '../../lib/auth-client';
 import type { Space } from '../../lib/model';
 import InstallAppCard from './InstallAppCard';
 
-type Mode = 'login' | 'signup';
 type InstallPrompt = { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }> };
 
 export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: { onLogin: () => void; installPrompt: InstallPrompt | null; onInstallUsed: () => void }) {
   const [profile, setProfile] = useState<Space>('pf');
-  const [mode, setMode] = useState<Mode>('login');
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [demoPassword, setDemoPassword] = useState('Clareia2026!');
@@ -37,9 +34,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
     setBusy(true);
     setError('');
     try {
-      const result = mode === 'signup'
-        ? await authClient.signUp.email({ email: email.trim(), password, name: name.trim(), space: profile })
-        : await authClient.signIn.email({ email: email.trim(), password });
+      const result = await authClient.signIn.email({ email: email.trim(), password });
 
       if (result.error) throw new Error(result.error.message || 'Não foi possível entrar.');
       const accountSpace = result.data?.user?.space;
@@ -92,7 +87,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
       <div className="login-mobile-brand"><Compass size={27}/>clareia.</div>
       <div className="login-form-wrap">
         <span className="eyebrow">BEM-VINDO AO SEU PRÓXIMO PASSO</span>
-        <h2>{mode === 'login' ? 'Entre na sua conta.' : 'Crie sua conta.'}</h2>
+        <h2>Entre na sua conta.</h2>
         <p className="login-intro">Cada conta Clareia fica ligada a um único perfil financeiro. Seus dados pessoais e do MEI permanecem separados.</p>
 
         <div className="profile-choices" role="group" aria-label="Tipo de acesso">
@@ -100,19 +95,13 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
           <button type="button" aria-pressed={profile === 'mei'} className={profile === 'mei' ? 'selected' : ''} onClick={() => choose('mei')}><span className="profile-choice-icon"><Building2 size={20}/></span><strong>MEI</strong><small>Meu negócio</small>{profile === 'mei' && <Check size={14} className="profile-check"/>}</button>
         </div>
 
-        <p className="test-access-note"><strong>Ambiente de teste:</strong> crie uma conta para validar seu acesso. No primeiro login, você deverá escolher uma senha pessoal; depois, a Central de Inteligência guiará o cadastro por texto ou voz. A venda e a liberação dos planos serão configuradas para a hospedagem.</p>
-
-        <div className="auth-mode-switch" role="tablist" aria-label="Acesso à conta">
-          <button type="button" role="tab" aria-selected={mode === 'login'} className={mode === 'login' ? 'selected' : ''} onClick={() => { setMode('login'); setError(''); }}>Entrar</button>
-          <button type="button" role="tab" aria-selected={mode === 'signup'} className={mode === 'signup' ? 'selected' : ''} onClick={() => { setMode('signup'); setError(''); }}>Criar conta</button>
-        </div>
+        <p className="test-access-note"><strong>Acesso controlado:</strong> a criação de novas contas está temporariamente suspensa enquanto a liberação comercial é configurada. Use a demonstração para conhecer o Clareia ou entre com suas credenciais.</p>
 
         <form className="account-auth-form" onSubmit={submitAccount}>
-          {mode === 'signup' && <label>Seu nome<input type="text" autoComplete="name" value={name} onChange={event => setName(event.target.value)} maxLength={80} required/></label>}
           <label>E-mail<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} maxLength={254} required/></label>
-          <label>Senha<div className="password-field"><input type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={event => setPassword(event.target.value)} minLength={8} maxLength={128} required/><button type="button" aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div></label>
+          <label>Senha<div className="password-field"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} minLength={8} maxLength={128} required/><button type="button" aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div></label>
           {error && <p role="alert" className="login-error">{error}</p>}
-          <button className="button primary login-submit" disabled={busy}>{busy ? 'Aguarde…' : mode === 'login' ? `Entrar como ${profileName}` : `Criar acesso ${profile === 'mei' ? 'MEI' : 'PF'}`}<ArrowRight size={18}/></button>
+          <button className="button primary login-submit" disabled={busy}>{busy ? 'Aguarde…' : `Entrar como ${profileName}`}<ArrowRight size={18}/></button>
         </form>
 
         <div className="login-note"><LockKeyhole size={17}/><p>O tipo de acesso escolhido fica fixo nesta conta. Para usar PF e MEI separadamente, cada perfil precisa de sua própria conta.</p></div>

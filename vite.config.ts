@@ -18,6 +18,8 @@ const managedLinux = readExecutionProfile() === "managed-linux";
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
+  // Cron expressions run in UTC. Bahia is UTC-3, so 12:00 UTC is 09:00 local.
+  triggers: { crons: ["0 12 * * *"] },
   d1_databases: d1
     ? [
         {

@@ -2,12 +2,15 @@ import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { env } from "cloudflare:workers";
 
-const buildSecret = "clareia-local-build-only-secret-change-before-use";
+// Keep builds usable without local credentials. Production auth routes fail
+// closed unless BETTER_AUTH_SECRET is configured, so this value is never a
+// shared or persistent production secret.
+const ephemeralBuildSecret = crypto.randomUUID() + crypto.randomUUID();
 
 export const auth = betterAuth({
   database: env.DB!,
   baseURL: env.BETTER_AUTH_URL || "http://localhost:3000",
-  secret: env.BETTER_AUTH_SECRET || buildSecret,
+  secret: env.BETTER_AUTH_SECRET || ephemeralBuildSecret,
   trustedOrigins: env.BETTER_AUTH_URL ? [env.BETTER_AUTH_URL] : undefined,
   user: {
     fields: {

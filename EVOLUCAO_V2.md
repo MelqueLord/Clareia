@@ -21,9 +21,9 @@ Validação: testes de não duplicação de gastos essenciais, transição de m�
 
 ## Notificações agendadas
 
-O processo diário deve enviar `POST` sem corpo a `https://clareia-financas-mei-pf.igrejamirc01.chatgpt.site/api/notifications/run`, às 9h em America/Bahia. Não lê nem recebe dados financeiros. A resposta contém apenas estado e contagens agregadas.
+As notificações são processadas por um Cron Trigger do Cloudflare Workers às 12h UTC (9h em America/Bahia). O evento agendado chama `runNotifications` dentro do Worker e não expõe um gatilho público com efeitos globais. O antigo caminho HTTP permanece como resposta sem ação para compatibilidade com o agendamento anterior.
 
-O endpoint é um gatilho público de manutenção com ações predefinidas. A autorização de cada destino vem da inscrição criada por usuário autenticado e consentimento do navegador. O solicitante não pode fornecer usuário, mensagem, endpoint ou horário. O servidor restringe horário (9h–20h), usa uma trava por minuto, reivindica inscrições atomicamente e limita a um aviso diário por dispositivo. A rotina examina até 100 inscrições por execução; ampliar capacidade exige paginação e agendador dedicado antes de escalar a base. Sem inscrições, a rotina não envia nada.
+O processamento só usa inscrições criadas por usuário autenticado e consentimento do navegador. O servidor restringe horário (9h–20h), usa uma trava por minuto, reivindica inscrições atomicamente e limita a um aviso diário por dispositivo. A rotina examina até 100 inscrições por execução; ampliar capacidade exige paginação e agendador dedicado antes de escalar a base. Sem inscrições, a rotina não envia nada.
 
 Sinais ativos são comparados com o último conjunto enviado. O resumo semanal é enviado às segundas-feiras, respeitando a preferência. Subscrições expiradas (404/410) são removidas. Falhas transitórias ficam disponíveis para tentativa posterior, sem afirmar sucesso de entrega. Não se adiciona uma assinatura ou habilita um dispositivo automaticamente.
 
