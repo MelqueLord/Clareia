@@ -93,3 +93,5 @@
 .card-actions{flex-wrap:wrap}.section-heading .card-actions .button{flex:1 1 135px}
 
 .stat-card-clickable{width:100%;color:inherit;text-align:left;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}.stat-card-clickable:hover{transform:translateY(-2px);box-shadow:0 6px 18px #19352f12}.stat-open-hint{display:flex;align-items:center;gap:4px;margin-top:8px;color:var(--green);font-size:10px;font-weight:600}
+
+.quick-entry-help{font-size:12px;color:var(--muted);margin:-7px 0 13px;line-height:1.5}
