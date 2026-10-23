@@ -40,7 +40,10 @@ export const session = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
   },
-  (table) => [index("session_user_id_idx").on(table.user_id)],
+  (table) => [
+    index("session_user_id_idx").on(table.user_id),
+    index("session_expires_at_idx").on(table.expires_at),
+  ],
 );
 
 export const account = sqliteTable(
@@ -88,15 +91,22 @@ export const verification = sqliteTable(
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [index("verification_identifier_idx").on(table.identifier)],
+  (table) => [
+    index("verification_identifier_idx").on(table.identifier),
+    index("verification_expires_at_idx").on(table.expires_at),
+  ],
 );
 
-export const rateLimit = sqliteTable("rate_limit", {
-  id: text("id").primaryKey(),
-  key: text("key").notNull().unique(),
-  count: integer("count").notNull(),
-  lastRequest: integer("last_request").notNull(),
-});
+export const rateLimit = sqliteTable(
+  "rate_limit",
+  {
+    id: text("id").primaryKey(),
+    key: text("key").notNull().unique(),
+    count: integer("count").notNull(),
+    lastRequest: integer("last_request").notNull(),
+  },
+  (table) => [index("rate_limit_last_request_idx").on(table.lastRequest)],
+);
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),

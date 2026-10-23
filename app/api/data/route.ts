@@ -75,7 +75,12 @@ export async function POST(req:Request){
    env.DB.prepare('INSERT OR IGNORE INTO finance_audit(id,user_id,action,created_at) SELECT ?,user_id,?,updated_at FROM finance_documents WHERE user_id=? AND mutation_id=?').bind(user.userId+':'+mutationId,action,user.userId,mutationId),
    env.DB.prepare('DELETE FROM finance_snapshots WHERE user_id=? AND created_at < ?').bind(user.userId,new Date(Date.now()-30*86400000).toISOString())
   ]);
-  if(!results[0].meta.changes)return reply({error:'Conflito de edição. Recarregue a página.'},409);return reply({revision:next,updatedAt:now});
+  if(!results[0].meta.changes){
+   const winner=await env.DB.prepare('SELECT revision,mutation_id,updated_at FROM finance_documents WHERE user_id=?').bind(user.userId).first<{revision:number;mutation_id:string;updated_at:string}>();
+   if(winner?.mutation_id===mutationId)return reply({revision:winner.revision,updatedAt:winner.updated_at});
+   return reply({error:'Conflito de edição. Recarregue a página.'},409);
+  }
+  return reply({revision:next,updatedAt:now});
  }catch{return reply({error:'Não foi possível salvar. Seus dados não foram confirmados.'},500);}
 }
 export async function DELETE(req:Request){
