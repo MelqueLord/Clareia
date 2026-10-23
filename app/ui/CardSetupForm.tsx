@@ -34,12 +34,15 @@ export default function CardSetupForm({ accounts, space, saving, onSave, onNeedA
     const form = new FormData(event.currentTarget);
     const bank = issuer === 'Outro' ? otherIssuer.trim() : issuer;
     if (!bank) { setMessage('Escolha um emissor ou informe o nome do banco.'); return; }
+    const limitText = String(form.get('limit') || '').trim();
+    const limit = limitText ? cents(limitText) : null;
+    if (limitText && (!Number.isSafeInteger(limit) || !limit)) { setMessage('Informe um limite maior que zero ou deixe em branco.'); return; }
     const name = nickname.trim() ? `${bank} · ${nickname.trim().slice(0, 40)}` : bank;
     await onSave({
       name,
       accountId: accounts.length === 1 ? accounts[0].id : String(form.get('account')),
       space,
-      limit: cents(String(form.get('limit'))),
+      limit,
       closingDay: Number(form.get('close')),
       dueDay: Number(form.get('due')),
     });
@@ -50,7 +53,7 @@ export default function CardSetupForm({ accounts, space, saving, onSave, onNeedA
     {issuer === 'Outro' && <label>Nome do banco ou emissor<input value={otherIssuer} onChange={event => setOtherIssuer(event.target.value)} maxLength={80} required placeholder="Digite o nome"/></label>}
     <details className="card-nickname-option"><summary>Tenho mais de um cartão deste emissor</summary><label>Identificação opcional<input value={nickname} onChange={event => setNickname(event.target.value)} maxLength={40} placeholder="Ex.: principal, virtual, final 1234"/></label></details>
     {accounts.length > 1 ? <label>Conta que paga a fatura<select name="account" required value={accountId} onChange={event => setAccountId(event.target.value)}><option value="">Selecione a conta</option>{accounts.map(account => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label> : <p className="card-account-note">Fatura vinculada à conta {accounts[0].name}.</p>}
-    <label>Limite do cartão (R$)<MoneyInput name="limit" required placeholder="0,00"/></label>
+    <label>Limite do cartão (R$) <span className="muted">(opcional)</span><MoneyInput name="limit" placeholder="Se souber, informe o limite"/></label>
     <div className="form-grid"><label>Fecha a fatura no dia<input type="number" name="close" min="1" max="28" defaultValue="23" required/></label><label>Vence no dia<input type="number" name="due" min="1" max="28" defaultValue="1" required/></label></div>
     {message && <p className="negative" role="alert">{message}</p>}
     <button className="button primary full-width" disabled={saving}>{saving ? 'Salvando…' : 'Salvar cartão'}</button>

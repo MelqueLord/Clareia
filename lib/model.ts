@@ -1,8 +1,9 @@
 export type Space = 'pf' | 'mei';
 export type Kind = 'expense' | 'income' | 'transfer' | 'refund' | 'card_payment' | 'card_debt' | 'reserve' | 'release';
 export type Account = { id:string; name:string; bank:string; space:Space; balance:number; openingDate:string };
-export type Card = { id:string; name:string; space:Space; accountId:string; limit:number; closingDay:number; dueDay:number };
-export type Transaction = { id:string; description:string; amount:number; type:Kind; category:string; date:string; dueDate:string; paid:boolean; estimated:boolean; accountId:string; toAccountId:string; cardId:string; space:Space; installments:number; recurring:boolean; recurrenceEndDate?:string; source:'manual'|'voice'; createdAt:string; goalId?:string; investmentAmount?:number; investmentType?:string; sourceIncomeId?:string };
+export type PaymentMethod = 'credit_card'|'debit'|'pix';
+export type Card = { id:string; name:string; space:Space; accountId:string; limit:number|null; closingDay:number; dueDay:number };
+export type Transaction = { id:string; description:string; amount:number; type:Kind; category:string; date:string; dueDate:string; paid:boolean; estimated:boolean; accountId:string; toAccountId:string; cardId:string; space:Space; installments:number; recurring:boolean; paymentMethod?:PaymentMethod; recurrenceEndDate?:string; source:'manual'|'voice'; createdAt:string; goalId?:string; investmentAmount?:number; investmentType?:string; sourceIncomeId?:string };
 export type Budget = { id:string; space:Space; category:string; limit:number };
 export type SavingsGoal = { id:string; space:Space; name:string; target:number; targetDate:string };
 export type InvestmentPlan = { id:string; space:Space; incomeCategory:string; mode:'fixed'|'percent'; value:number; investmentType:string };
