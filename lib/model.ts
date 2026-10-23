@@ -6,7 +6,7 @@ export type Transaction = { id:string; description:string; amount:number; type:K
 export type Budget = { id:string; space:Space; category:string; limit:number };
 export type SavingsGoal = { id:string; space:Space; name:string; target:number; targetDate:string };
 export type InvestmentPlan = { id:string; space:Space; incomeCategory:string; mode:'fixed'|'percent'; value:number; investmentType:string };
-export type Preferences = { floor:number|null; complete:boolean; checkedOn:string; essentials?:{category:string;monthly:number}[]; essentialsReviewed?:boolean; closedYears?:number[] };
+export type Preferences = { floor:number|null; complete:boolean; checkedOn:string; monthlyGoalsReviewed?:boolean; essentials?:{category:string;monthly:number}[]; essentialsReviewed?:boolean; closedYears?:number[] };
 export type PersonalProfile = { incomeSource:string; monthlyIncomeTarget:number|null; dependents:number };
 export type BusinessProfile = { tradeName:string; cnpj:string; activity:string; city:string; monthlyRevenueTarget:number|null; monthlyDas:number|null; dasDueDay:number|null; proLabore:number|null };
 export type FinanceData = { configured:boolean; accounts:Account[]; cards:Card[]; transactions:Transaction[]; budgets:Budget[]; savingsGoals?:SavingsGoal[]; investmentPlans?:InvestmentPlan[]; preferences:Record<Space,Preferences>; profiles:{pf:PersonalProfile;mei:BusinessProfile}; dismissed:string[] };
@@ -17,7 +17,23 @@ export const businessExpenseCategories = ['Materiais e insumos','Fornecedores','
 export const categories = [...new Set([...personalIncomeCategories,...personalExpenseCategories,...businessIncomeCategories,...businessExpenseCategories])];
 export function categoriesFor(space:Space,kind:'income'|'expense'|'all'='all'):string[]{const list=space==='mei'?[...businessIncomeCategories,...businessExpenseCategories]:[...personalIncomeCategories,...personalExpenseCategories];return kind==='all'?list:space==='mei'?(kind==='income'?businessIncomeCategories:businessExpenseCategories):(kind==='income'?personalIncomeCategories:personalExpenseCategories);}
 export const id = () => crypto.randomUUID();
-export function emptyData(): FinanceData { return {configured:false,accounts:[],cards:[],transactions:[],budgets:[],savingsGoals:[],investmentPlans:[],preferences:{pf:{floor:null,complete:false,checkedOn:'',closedYears:[]},mei:{floor:null,complete:false,checkedOn:'',closedYears:[]}},profiles:{pf:{incomeSource:'',monthlyIncomeTarget:null,dependents:0},mei:{tradeName:'',cnpj:'',activity:'',city:'',monthlyRevenueTarget:null,monthlyDas:null,dasDueDay:null,proLabore:null}},dismissed:[]}; }
+export function emptyData(): FinanceData { return {configured:false,accounts:[],cards:[],transactions:[],budgets:[],savingsGoals:[],investmentPlans:[],preferences:{pf:{floor:null,complete:false,checkedOn:'',monthlyGoalsReviewed:false,closedYears:[]},mei:{floor:null,complete:false,checkedOn:'',monthlyGoalsReviewed:false,closedYears:[]}},profiles:{pf:{incomeSource:'',monthlyIncomeTarget:null,dependents:0},mei:{tradeName:'',cnpj:'',activity:'',city:'',monthlyRevenueTarget:null,monthlyDas:null,dasDueDay:null,proLabore:null}},dismissed:[]}; }
+export function normalizeMonthlyGoals(data: FinanceData): FinanceData {
+ const budgets=data.budgets.map(item=>({...item}));
+ const preferences={...data.preferences};
+ for(const space of ['pf','mei'] as const){
+  const preference=data.preferences[space];
+  for(const legacy of preference.essentials||[]){
+   if(legacy.monthly<=0)continue;
+   const current=budgets.find(item=>item.space===space&&item.category===legacy.category);
+   if(current)current.limit=Math.max(current.limit,legacy.monthly);
+   else budgets.push({id:id(),space,category:legacy.category,limit:legacy.monthly});
+  }
+  const {essentials,essentialsReviewed,...currentPreference}=preference;
+  preferences[space]={...currentPreference,monthlyGoalsReviewed:preference.monthlyGoalsReviewed??essentialsReviewed??!!(essentials?.length||budgets.some(item=>item.space===space))};
+ }
+ return {...data,budgets,preferences};
+}
 export const money = (cents:number) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
 export function cents(input:string):number { const s=input.replace(/[^0-9,.-]/g,''); const normalized=s.includes(',')?s.replace(/\./g,'').replace(',','.'):s; return Math.round(Number(normalized)*100); }
 export function today():string { return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bahia',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
