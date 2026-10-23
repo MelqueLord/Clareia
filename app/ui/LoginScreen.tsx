@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { ArrowRight, ArrowUpRight, Building2, Check, Compass, Eye, EyeOff, LockKeyhole, Sparkles, Wallet } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BarChart3, Building2, Check, CheckCircle2, Compass, Eye, EyeOff, LockKeyhole, Mic, ShieldCheck, Sparkles, Target, Wallet } from 'lucide-react';
 import { authClient } from '../../lib/auth-client';
 import type { Space } from '../../lib/model';
 import InstallAppCard from './InstallAppCard';
@@ -19,6 +19,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
   const [demoBusy, setDemoBusy] = useState(false);
   const [error, setError] = useState('');
   const [demoError, setDemoError] = useState('');
+  const [demoOpen, setDemoOpen] = useState(false);
 
   const demoEmail = profile === 'pf' ? 'pf@teste.clareia.app' : 'mei@teste.clareia.app';
   const profileName = profile === 'mei' ? 'MEI' : 'pessoa física';
@@ -27,6 +28,12 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
     setProfile(p);
     setError('');
     setDemoError('');
+  }
+
+  function openDemoFor(p: Space = profile) {
+    choose(p);
+    setDemoOpen(true);
+    window.setTimeout(() => document.getElementById('demo-access')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40);
   }
 
   async function submitAccount(event: FormEvent<HTMLFormElement>) {
@@ -71,56 +78,93 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
     }
   }
 
-  return <div className="login-shell">
-    <section className="login-story">
-      <a className="login-brand" href="/"><Compass size={30}/>clareia<span>.</span></a>
-      <div className="story-copy">
-        <span className="login-pill"><Sparkles size={14}/>MENOS DÚVIDAS. MAIS DIREÇÃO.</span>
-        <h1>Seu dinheiro.<br/>Seu próximo<br/><em>bom passo.</em></h1>
-        <p>Um olhar inteligente sobre suas finanças, para cuidar do presente e decidir o futuro.</p>
-        <div className="story-signal"><span><Sparkles size={20}/></span><div><strong>Seu radar já percebeu.</strong><p>Alimentação subiu neste mês. Vamos olhar juntos?</p></div><ArrowUpRight size={20}/></div>
+  return <div className="clareia-landing" id="inicio">
+    <header className="landing-nav">
+      <div className="landing-nav-inner">
+        <a className="landing-brand" href="#inicio" aria-label="Clareia, início"><span><Compass size={21}/></span>clareia<span className="landing-brand-dot">.</span></a>
+        <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#planos">Para quem</a><a href="#duvidas">Dúvidas</a></nav>
+        <div className="landing-nav-actions"><a className="landing-login-link" href="#acesso">Já tenho acesso</a><button className="landing-nav-cta" type="button" onClick={() => openDemoFor()} >Experimentar grátis<ArrowRight size={15}/></button></div>
       </div>
-      <span className="story-footer">Feito para a sua vida. E para o seu negócio.</span>
-      <div className="login-orbits" aria-hidden="true"/>
-    </section>
-    <section className="login-main">
-      <div className="login-mobile-brand"><Compass size={27}/>clareia.</div>
-      <div className="login-form-wrap">
-        <span className="eyebrow">BEM-VINDO AO SEU PRÓXIMO PASSO</span>
-        <h2>Entre na sua conta.</h2>
-        <p className="login-intro">Cada conta Clareia fica ligada a um único perfil financeiro. Seus dados pessoais e do MEI permanecem separados.</p>
+    </header>
 
-        <div className="profile-choices" role="group" aria-label="Tipo de acesso">
-          <button type="button" aria-pressed={profile === 'pf'} className={profile === 'pf' ? 'selected' : ''} onClick={() => choose('pf')}><span className="profile-choice-icon"><Wallet size={20}/></span><strong>Pessoa física</strong><small>Minha vida pessoal</small>{profile === 'pf' && <Check size={14} className="profile-check"/>}</button>
-          <button type="button" aria-pressed={profile === 'mei'} className={profile === 'mei' ? 'selected' : ''} onClick={() => choose('mei')}><span className="profile-choice-icon"><Building2 size={20}/></span><strong>MEI</strong><small>Meu negócio</small>{profile === 'mei' && <Check size={14} className="profile-check"/>}</button>
+    <main className="landing-main">
+      <section className="landing-hero">
+        <div className="landing-hero-copy">
+          <span className="landing-eyebrow"><Sparkles size={14}/> FINANÇAS MAIS CLARAS, MESMO COM POUCO TEMPO</span>
+          <h1>Organizar seu dinheiro pode caber na sua rotina.</h1>
+          <p className="landing-hero-lead">Fale o que recebeu ou gastou. O Clareia prepara o lançamento e a Central de Inteligência ajuda você a entender o mês e escolher o próximo passo.</p>
+          <div className="landing-hero-actions"><button type="button" className="landing-primary-cta" onClick={() => openDemoFor()}><Mic size={17}/> Testar com áudio na demonstração <ArrowRight size={17}/></button><a href="#como-funciona" className="landing-text-cta">Ver como funciona <ArrowUpRight size={15}/></a></div>
+          <div className="landing-trust-note"><ShieldCheck size={17}/><span>Teste gratuito com dados fictícios. Sem informar cartão.</span></div>
         </div>
 
-        <p className="test-access-note"><strong>Acesso controlado:</strong> a criação de novas contas está temporariamente suspensa enquanto a liberação comercial é configurada. Use a demonstração para conhecer o Clareia ou entre com suas credenciais.</p>
+        <div className="landing-product" aria-label="Exemplo ilustrativo do Clareia">
+          <div className="landing-product-top"><span className="landing-product-mark"><Sparkles size={16}/></span><div><strong>Um jeito mais simples de acompanhar</strong><small>EXEMPLO ILUSTRATIVO</small></div><span className="landing-live-dot"/></div>
+          <div className="landing-voice-card"><div className="landing-voice-head"><span><Mic size={15}/> Você pode falar</span><span className="landing-wave" aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/><i/></span></div><p>“Paguei 48 reais no mercado com Pix.”</p><div className="landing-voice-result"><CheckCircle2 size={15}/><span>Rascunho pronto para você conferir</span></div></div>
+          <div className="landing-insight-card"><div><span className="landing-insight-icon"><Sparkles size={16}/></span><div><small>CENTRAL DE INTELIGÊNCIA</small><strong>Seu mês, explicado sem complicação</strong></div></div><p>Compare seus registros, perceba mudanças nos gastos e receba uma sugestão prática para seguir.</p><span className="landing-insight-link">Com base no que você lançar <ArrowRight size={13}/></span></div>
+          <div className="landing-product-foot"><span><Wallet size={14}/> Pessoa física</span><span><Building2 size={14}/> MEI</span><small>acessos separados</small></div>
+        </div>
+      </section>
 
-        <form className="account-auth-form" onSubmit={submitAccount}>
-          <label>E-mail<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} maxLength={254} required/></label>
-          <label>Senha<div className="password-field"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} minLength={8} maxLength={128} required/><button type="button" aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div></label>
-          {error && <p role="alert" className="login-error">{error}</p>}
-          <button className="button primary login-submit" disabled={busy}>{busy ? 'Aguarde…' : `Entrar como ${profileName}`}<ArrowRight size={18}/></button>
-        </form>
+      <section className="landing-offer" aria-label="Oferta de demonstração"><div className="landing-offer-icon"><CheckCircle2 size={20}/></div><div><span>COMECE SEM COMPLICAÇÃO</span><strong>Conheça por dentro antes de decidir.</strong><p>Abra uma demonstração, experimente um lançamento por voz e veja como a inteligência organiza as informações.</p></div><button type="button" onClick={() => openDemoFor()}>Quero experimentar <ArrowRight size={16}/></button></section>
 
-        <div className="login-note"><LockKeyhole size={17}/><p>O tipo de acesso escolhido fica fixo nesta conta. Para usar PF e MEI separadamente, cada perfil precisa de sua própria conta.</p></div>
+      <section id="como-funciona" className="landing-section landing-how">
+        <div className="landing-section-heading"><span className="landing-eyebrow">MENOS FORMULÁRIO. MAIS DIREÇÃO.</span><h2>Você fala. O Clareia organiza. Você decide.</h2><p>Uma rotina financeira que começa simples e ganha clareza conforme você usa.</p></div>
+        <div className="landing-feature-grid">
+          <article className="landing-feature"><span className="landing-feature-number">01</span><span className="landing-feature-icon"><Mic size={20}/></span><h3>Registre falando ou digitando</h3><p>Diga algo como “recebi meu salário hoje” ou “paguei a conta de luz”. Confira o rascunho antes de salvar.</p><span className="landing-feature-tag">Áudio ou texto</span></article>
+          <article className="landing-feature"><span className="landing-feature-number">02</span><span className="landing-feature-icon"><BarChart3 size={20}/></span><h3>Entenda para onde o dinheiro foi</h3><p>Veja receitas, despesas, cartões, metas e previsões em uma visão mais fácil de acompanhar.</p><span className="landing-feature-tag">Tudo no seu ritmo</span></article>
+          <article className="landing-feature"><span className="landing-feature-number">03</span><span className="landing-feature-icon"><Target size={20}/></span><h3>Receba um próximo passo</h3><p>A Central compara os períodos e aponta o que merece atenção, com sugestões ligadas aos seus registros.</p><span className="landing-feature-tag">Orientação contínua</span></article>
+        </div>
+      </section>
 
-        <details className="demo-access">
-          <summary>Testar com uma conta de demonstração</summary>
-          <div className="test-label"><span/>AMBIENTE DE DEMONSTRAÇÃO</div>
-          <p className="small-text muted">Use dados fictícios para conhecer o Clareia. As contas de demonstração são compartilhadas.</p>
-          <form onSubmit={submitDemo}>
-            <label>E-mail da demonstração<input type="email" autoComplete="username" readOnly value={demoEmail}/></label>
-            <label>Senha<div className="password-field"><input type={showDemoPassword ? 'text' : 'password'} autoComplete="current-password" value={demoPassword} onChange={event => setDemoPassword(event.target.value)} required/><button type="button" aria-label={showDemoPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowDemoPassword(!showDemoPassword)}>{showDemoPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div></label>
-            {demoError && <p role="alert" className="login-error">{demoError}</p>}
-            <button className="button secondary login-submit" disabled={demoBusy}>{demoBusy ? 'Entrando…' : `Abrir demonstração ${profile === 'mei' ? 'MEI' : 'PF'}`}<ArrowRight size={18}/></button>
+      <section className="landing-voice-band">
+        <div className="landing-voice-orb"><Mic size={27}/></div><div><span className="landing-eyebrow">UMA FRASE JÁ É UM COMEÇO</span><h2>Sem tempo para preencher tudo? Conte o que aconteceu.</h2><p>O Clareia transforma sua fala em um rascunho para revisar. Você continua no controle e confirma cada lançamento.</p></div><button type="button" onClick={() => openDemoFor()}>Experimentar por voz <ArrowRight size={16}/></button>
+      </section>
+
+      <section id="planos" className="landing-section landing-plans">
+        <div className="landing-section-heading"><span className="landing-eyebrow">PLANOS MENSAIS · PERFIS SEPARADOS</span><h2>Sua vida pessoal e seu MEI, cada um no seu lugar.</h2><p>Escolha o espaço que faz sentido para você. Cada perfil tem acesso e informações independentes.</p></div>
+        <div className="landing-plan-grid">
+          <article className="landing-plan-card"><div className="landing-plan-icon"><Wallet size={21}/></div><span className="landing-plan-label">PESSOA FÍSICA</span><h3>Suas finanças pessoais</h3><p>Renda, contas do mês, cartão, metas para guardar e comparações para cuidar melhor do seu dinheiro.</p><ul><li><Check size={15}/> Receitas e despesas pessoais</li><li><Check size={15}/> Metas mensais e reserva</li><li><Check size={15}/> Comparações e próximos passos</li></ul><button type="button" className="landing-plan-cta" onClick={() => openDemoFor('pf')}>Conhecer a experiência PF <ArrowRight size={15}/></button></article>
+          <article className="landing-plan-card landing-plan-mei"><div className="landing-plan-icon"><Building2 size={21}/></div><span className="landing-plan-label">MEI</span><h3>O caixa do seu negócio</h3><p>Entradas, gastos, contas, cartões e previsões para enxergar o movimento do seu negócio.</p><ul><li><Check size={15}/> Receitas e despesas do MEI</li><li><Check size={15}/> Contas, cartões e compromissos</li><li><Check size={15}/> Visão do caixa e orientação</li></ul><button type="button" className="landing-plan-cta" onClick={() => openDemoFor('mei')}>Conhecer a experiência MEI <ArrowRight size={15}/></button></article>
+        </div>
+        <p className="landing-plan-footnote"><LockKeyhole size={14}/> As assinaturas PF e MEI são separadas. A demonstração é compartilhada e contém apenas dados fictícios.</p>
+      </section>
+
+      <section className="landing-final-cta"><span className="landing-eyebrow">COMECE PELO QUE ESTÁ AO SEU ALCANCE</span><h2>Um pouco mais de clareza já muda a próxima decisão.</h2><p>Experimente com dados de exemplo e veja se o Clareia combina com sua rotina.</p><button type="button" className="landing-primary-cta" onClick={() => openDemoFor()}><Mic size={17}/> Abrir demonstração grátis <ArrowRight size={17}/></button></section>
+
+      <section id="duvidas" className="landing-faq"><div className="landing-section-heading"><span className="landing-eyebrow">DÚVIDAS RÁPIDAS</span><h2>Começar pode ser simples.</h2></div><div className="landing-faq-grid"><details><summary>Preciso preencher tudo de uma vez?</summary><p>Não. Você pode começar pelo que já sabe e completar as informações aos poucos. A Central mostra a próxima etapa sugerida.</p></details><details><summary>O áudio substitui minha revisão?</summary><p>Não. A fala vira um rascunho para você conferir e confirmar antes de salvar.</p></details><details><summary>Pessoa física e MEI ficam misturados?</summary><p>Não. Cada perfil tem um acesso e um conjunto de dados separado.</p></details><details><summary>O Clareia guarda minha gravação?</summary><p>O Clareia não armazena o áudio. O reconhecimento de voz depende do navegador e pode usar um serviço externo para transcrever.</p></details></div></section>
+
+      <section id="acesso" className="landing-access">
+        <div className="landing-access-intro"><span className="landing-eyebrow">SUA PRÓXIMA ETAPA</span><h2>Entre ou conheça a demonstração.</h2><p>Escolha o perfil que quer explorar. Para usar seus próprios dados, entre com o acesso correspondente.</p><div className="landing-access-note"><ShieldCheck size={18}/><span>A demonstração usa dados fictícios. Não informe senhas bancárias nem dados de cartão.</span></div></div>
+        <div className="landing-auth-card">
+          <div className="landing-auth-heading"><span>ACESSO CLAREIA</span><h3>Bem-vindo ao seu próximo passo.</h3><p>Cada conta está ligada a um perfil financeiro.</p></div>
+          <div className="profile-choices" role="group" aria-label="Tipo de acesso">
+            <button type="button" aria-pressed={profile === 'pf'} className={profile === 'pf' ? 'selected' : ''} onClick={() => choose('pf')}><span className="profile-choice-icon"><Wallet size={20}/></span><strong>Pessoa física</strong><small>Minha vida pessoal</small>{profile === 'pf' && <Check size={14} className="profile-check"/>}</button>
+            <button type="button" aria-pressed={profile === 'mei'} className={profile === 'mei' ? 'selected' : ''} onClick={() => choose('mei')}><span className="profile-choice-icon"><Building2 size={20}/></span><strong>MEI</strong><small>Meu negócio</small>{profile === 'mei' && <Check size={14} className="profile-check"/>}</button>
+          </div>
+          <form className="account-auth-form" onSubmit={submitAccount}>
+            <label>E-mail<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} maxLength={254} required/></label>
+            <label>Senha<div className="password-field"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} minLength={8} maxLength={128} required/><button type="button" aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div></label>
+            {error && <p role="alert" className="login-error">{error}</p>}
+            <button className="button primary login-submit" disabled={busy}>{busy ? 'Aguarde…' : `Entrar como ${profileName}`}<ArrowRight size={18}/></button>
           </form>
-          <p className="test-password">Senha de demonstração: <strong>Clareia2026!</strong></p>
-        </details>
-      </div>
-      <InstallAppCard prompt={installPrompt} onPromptUsed={onInstallUsed} variant="login"/>
-      <p className="login-bottom">Clareza para escolher. Espaço para viver.</p>
-    </section>
+          <p className="test-access-note"><strong>Novos acessos:</strong> a liberação de assinaturas está sendo preparada. Use a demonstração para conhecer o Clareia.</p>
+          <div className="login-note"><LockKeyhole size={16}/><p>Para usar PF e MEI separadamente, cada perfil precisa de sua própria conta.</p></div>
+          <details id="demo-access" className="demo-access" open={demoOpen} onToggle={event => setDemoOpen(event.currentTarget.open)}>
+            <summary>Testar com uma conta de demonstração</summary>
+            <div className="test-label"><span/>AMBIENTE DE DEMONSTRAÇÃO</div>
+            <p className="small-text muted">Use dados fictícios para conhecer o Clareia. As contas de demonstração são compartilhadas.</p>
+            <form onSubmit={submitDemo}>
+              <label>E-mail da demonstração<input type="email" autoComplete="username" readOnly value={demoEmail}/></label>
+              <label>Senha<div className="password-field"><input type={showDemoPassword ? 'text' : 'password'} autoComplete="current-password" value={demoPassword} onChange={event => setDemoPassword(event.target.value)} required/><button type="button" aria-label={showDemoPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowDemoPassword(!showDemoPassword)}>{showDemoPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div></label>
+              {demoError && <p role="alert" className="login-error">{demoError}</p>}
+              <button className="button secondary login-submit" disabled={demoBusy}>{demoBusy ? 'Entrando…' : `Abrir demonstração ${profile === 'mei' ? 'MEI' : 'PF'}`}<ArrowRight size={18}/></button>
+            </form>
+            <p className="test-password">A demonstração usa um acesso compartilhado com dados fictícios.</p>
+          </details>
+        </div>
+      </section>
+      <div className="landing-install"><InstallAppCard prompt={installPrompt} onPromptUsed={onInstallUsed} variant="login"/></div>
+    </main>
+    <footer className="landing-footer"><a className="landing-brand" href="#inicio"><span><Compass size={18}/></span>clareia<span className="landing-brand-dot">.</span></a><p>Mais clareza para cuidar do que é seu.</p><a href="#acesso">Acessar o Clareia <ArrowUpRight size={14}/></a></footer>
   </div>;
 }

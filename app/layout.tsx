@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./intelligence.css";
 import "./onboarding.css";
+import "./landing.css";
 
 export const metadata: Metadata = {
-  title: "Clareia · Finanças no rumo certo",
-  description: "Seu dinheiro, com direção. Controle pessoal e MEI com projeções e alertas explicados.",
+  title: "Clareia · Organize suas finanças por áudio e com inteligência",
+  description: "Fale suas receitas e despesas, acompanhe seus gastos e receba orientação financeira para sua vida pessoal ou seu MEI.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Clareia" },
   icons: {
