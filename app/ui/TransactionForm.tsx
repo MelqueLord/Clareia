@@ -58,8 +58,10 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const [investmentTouched, setInvestmentTouched] = useState(false);
   const [message, setMessage] = useState('');
   const card = data.cards.find(item => item.id === cardId);
+  const availableCards = data.cards.filter(item => item.space === selectedSpace);
   const lastInstallmentDue = due && installments > 0 ? addMonths(due, installments - 1) : '';
   const investmentPlan = (data.investmentPlans || []).find(plan => plan.space === selectedSpace && plan.incomeCategory === category);
+  const displayDate = (value: string) => value ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
 
   function chooseCategory(nextCategory: string) {
     setCategory(nextCategory);
@@ -153,6 +155,25 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     if (investmentTypeChoice === 'Outro' && investmentEnabled && type === 'income' && !customInvestmentType.trim()) { setMessage('Informe o tipo de investimento ou escolha outra opção.'); return; }
     onSave(transaction);
   }}>
+    {cardPurchaseMode && !tx && !voice ? <section className="card-entry-form">
+      <p className="card-entry-kicker">Compra no cartão · {selectedSpace === 'mei' ? 'Meu MEI' : 'Pessoal'}</p>
+      <p className="card-entry-help">Informe o total. O Clareia distribui as parcelas nas faturas automaticamente.</p>
+      <label>O que você comprou?<input required name="description" value={description} onChange={event => setDescription(event.target.value)} onBlur={inferCategory} placeholder="Ex.: celular, mercado" maxLength={180}/></label>
+      <div className="form-grid card-entry-grid"><label>Valor total da compra (R$)<MoneyInput required name="amount" value={amountText} onChange={changeAmount} placeholder="0,00"/></label><label>Data da compra<input required type="date" value={date} onChange={event => { const value = event.target.value; setDate(value); const selected = data.cards.find(item => item.id === cardId); setDue(selected ? firstCardDue(value, selected) : value); }}/></label></div>
+      <div className="form-grid card-entry-grid"><label>Cartão de crédito<select required value={cardId} onChange={event => { const selected = data.cards.find(item => item.id === event.target.value); setCardId(event.target.value); if (selected) { setAccountId(selected.accountId); setDue(firstCardDue(date, selected)); setPaid(false); } }}><option value="">Selecione o cartão</option>{availableCards.map(item => { const account = data.accounts.find(account => account.id === item.accountId); return <option key={item.id} value={item.id}>{item.name} · {account?.name || 'conta vinculada'}</option>; })}</select></label><label>Parcelas<input name="installments" type="number" min="1" max="36" value={installments} onChange={event => setInstallments(Math.max(1, Math.min(36, Number(event.target.value) || 1)))}/></label></div>
+      {cardId && <div className="card-entry-summary"><strong>{installments} parcela{installments === 1 ? '' : 's'}</strong><span>Primeira fatura: {displayDate(due)} · última: {displayDate(lastInstallmentDue)}</span></div>}
+      <details className="card-category-option"><summary>Categoria sugerida: {category} · alterar</summary><label>Categoria<select name="category" value={category} onChange={event => chooseCategory(event.target.value)}>{categoriesFor(selectedSpace, 'expense').map(item => <option key={item}>{item}</option>)}</select></label></details>
+    </section> : type === 'card_debt' && !tx && !voice ? <section className="card-entry-form">
+      <p className="card-entry-kicker">Parcelas que já existem · {selectedSpace === 'mei' ? 'Meu MEI' : 'Pessoal'}</p>
+      <p className="card-entry-help">Cadastre apenas o total que ainda falta pagar e quantas parcelas restam.</p>
+      <label>O que foi comprado?<input required name="description" value={description} onChange={event => setDescription(event.target.value)} onBlur={inferCategory} placeholder="Ex.: geladeira, notebook" maxLength={180}/></label>
+      <label>Total que ainda falta pagar (R$)<MoneyInput required name="amount" value={amountText} onChange={changeAmount} placeholder="0,00"/></label>
+      <div className="form-grid card-entry-grid"><label>Cartão de crédito<select required value={cardId} onChange={event => { const selected = data.cards.find(item => item.id === event.target.value); setCardId(event.target.value); if (selected) setAccountId(selected.accountId); }}><option value="">Selecione o cartão</option>{availableCards.map(item => { const account = data.accounts.find(account => account.id === item.accountId); return <option key={item.id} value={item.id}>{item.name} · {account?.name || 'conta vinculada'}</option>; })}</select></label><label>Parcelas que faltam<input name="installments" type="number" min="1" max="36" value={installments} onChange={event => setInstallments(Math.max(1, Math.min(36, Number(event.target.value) || 1)))}/></label></div>
+      <label>Vencimento da próxima parcela<input required type="date" value={due} onChange={event => setDue(event.target.value)}/></label>
+      {cardId && due && <div className="card-entry-summary"><strong>{installments} parcela{installments === 1 ? '' : 's'} restante{installments === 1 ? '' : 's'}</strong><span>Próxima: {displayDate(due)} · termina: {displayDate(lastInstallmentDue)}</span></div>}
+      {!availableCards.length && <div className="notice card-debt-note">Cadastre o cartão para continuar.<button type="button" className="text-link" onClick={onNeedAccount}>Cadastrar cartão <ArrowRight size={14}/></button></div>}
+      <details className="card-category-option"><summary>Categoria sugerida: {category} · alterar</summary><label>Categoria<select name="category" value={category} onChange={event => chooseCategory(event.target.value)}>{categoriesFor(selectedSpace, 'expense').map(item => <option key={item}>{item}</option>)}</select></label></details>
+    </section> : <>
     {voice && <div className="voice-review-summary">
       <div className="voice-review-heading"><Mic size={16}/><strong>Entendi assim</strong><span>Confira antes de salvar</span></div>
       <div className="voice-review-tags"><span>{type === 'income' ? 'Receita' : type === 'card_debt' ? 'Parcelas' : type === 'card_payment' ? 'Fatura' : type === 'transfer' ? 'Transferência' : type === 'reserve' ? 'Reserva' : type === 'release' ? 'Resgate' : type === 'refund' ? 'Reembolso' : 'Despesa'}</span><span>{category}</span><span>{date.split('-').reverse().join('/')}{voice.dateWasInferred ? ' · hoje por padrão' : ''}</span>{voice.dueDate && voice.dueDate !== date && <span>Vence {voice.dueDate.split('-').reverse().join('/')}</span>}{voice.amount !== null && <span>R$ {(voice.amount / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}{accountId && <span>{data.accounts.find(account => account.id === accountId)?.bank} · {data.accounts.find(account => account.id === accountId)?.name}</span>}{cardId && <span>{data.cards.find(item => item.id === cardId)?.name}</span>}</div>
@@ -206,6 +227,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     </section>}
     {(type === 'reserve' || type === 'release') && <label>Tipo de investimento <span className="muted">(opcional)</span><select value={investmentTypeChoice} onChange={event => { setInvestmentTypeChoice(event.target.value); if (event.target.value !== 'Outro') setCustomInvestmentType(''); }}><option value="">Sem tipo informado</option>{investmentTypes.map(item => <option key={item}>{item}</option>)}<option value="Outro">Outro</option></select>{investmentTypeChoice === 'Outro' && <input aria-label="Qual tipo de investimento" value={customInvestmentType} onChange={event => setCustomInvestmentType(event.target.value)} maxLength={80} placeholder="Escreva o tipo"/>}</label>}
     </section>}
+    </>}
     {!showAdvanced && !isSpecialType && <input type="hidden" name="category" value={category}/>}
     {message && <p className="negative" role="alert">{message}</p>}
     <button className="button primary full-width quick-submit" disabled={saving}>{saving ? 'Salvando…' : submitLabel || (type === 'card_debt' ? 'Salvar parcelas restantes' : voice ? 'Conferi, salvar lançamento' : 'Salvar lançamento')} <ArrowRight size={15}/></button>
