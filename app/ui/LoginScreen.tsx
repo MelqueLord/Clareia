@@ -181,6 +181,6 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
       </section>
       <div className="landing-install"><InstallAppCard prompt={installPrompt} onPromptUsed={onInstallUsed} variant="login"/></div>
     </main>
-    <footer className="landing-footer"><a className="landing-brand" href="#inicio"><span><Compass size={18}/></span>clareia<span className="landing-brand-dot">.</span></a><p>Mais clareza para cuidar do que é seu.</p><a href="#acesso">Acessar o Clareia <ArrowUpRight size={14}/></a></footer>
+    <footer className="landing-footer"><a className="landing-brand" href="#inicio"><span><Compass size={18}/></span>clareia<span className="landing-brand-dot">.</span></a><p>Mais clareza para cuidar do que é seu. <a className="landing-privacy-link" href="/privacidade">Privacidade</a></p><a href="#acesso">Acessar o Clareia <ArrowUpRight size={14}/></a></footer>
   </div>;
 }

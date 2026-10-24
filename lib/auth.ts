@@ -14,6 +14,32 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET || buildOnlySecret,
   trustedOrigins: env.BETTER_AUTH_URL ? [env.BETTER_AUTH_URL] : undefined,
   user: {
+    deleteUser: {
+      enabled: true,
+      beforeDelete: async (user) => {
+        if (!env.DB) throw new Error('Banco de dados indisponível para concluir a exclusão.');
+
+        // Finance records are stored outside Better Auth, with one document per
+        // profile. Remove both current and legacy keys before deleting the login.
+        const financeUserIds = [
+          user.id,
+          `${user.id}:pf`,
+          `${user.id}:mei`,
+          `personal:${user.id}:pf`,
+          `personal:${user.id}:mei`,
+        ];
+        const placeholders = financeUserIds.map(() => '?').join(',');
+        const statements = (['finance_documents', 'finance_snapshots', 'finance_audit', 'push_subscriptions'] as const)
+          .map((table) => env.DB!.prepare(`DELETE FROM ${table} WHERE user_id IN (${placeholders})`).bind(...financeUserIds));
+
+        await env.DB.batch([
+          ...statements,
+          env.DB.prepare('DELETE FROM account_access WHERE user_id=?').bind(user.id),
+          env.DB.prepare('DELETE FROM verification WHERE value=? OR identifier=? OR identifier=?')
+            .bind(user.id, user.email, `email:${user.email}`),
+        ]);
+      },
+    },
     fields: {
       emailVerified: "email_verified",
       createdAt: "created_at",
