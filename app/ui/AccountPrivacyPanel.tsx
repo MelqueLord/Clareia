@@ -62,7 +62,7 @@ export default function AccountPrivacyPanel({ user }: AccountPrivacyPanelProps) 
         <details className="privacy-delete-details">
           <summary><Trash2 size={15}/> Excluir minha conta e meus dados</summary>
           <div className="privacy-delete-content">
-            <div className="privacy-delete-warning"><AlertTriangle size={17}/><p>A exclusão apaga seu acesso e os dados financeiros dos perfis Pessoa Física e MEI. Essa ação não pode ser desfeita.</p></div>
+            <div className="privacy-delete-warning"><AlertTriangle size={17}/><p>A exclusão apaga o acesso, os dados financeiros e as cópias vinculadas a esta conta. Outros acessos PF ou MEI são contas separadas. Essa ação não pode ser desfeita.</p></div>
             <form onSubmit={removeAccount}>
               <label>E-mail da conta
                 <input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder={user.email} required/>
