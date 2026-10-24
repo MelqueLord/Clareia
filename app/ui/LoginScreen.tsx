@@ -15,6 +15,11 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
+  const [recoveryMessage, setRecoveryMessage] = useState('');
+  const [recoveryError, setRecoveryError] = useState('');
   const [demoPassword, setDemoPassword] = useState('Clareia2026!');
   const [showPassword, setShowPassword] = useState(false);
   const [showDemoPassword, setShowDemoPassword] = useState(false);
@@ -68,6 +73,26 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
       setError(cause instanceof Error ? cause.message : 'Não foi possível entrar. Tente novamente.');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function requestRecovery(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setRecoveryBusy(true);
+    setRecoveryError('');
+    setRecoveryMessage('');
+    try {
+      const response = await fetch('/api/auth/request-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: recoveryEmail.trim().toLowerCase(), redirectTo: `${window.location.origin}/redefinir-senha` }),
+      });
+      if (!response.ok) throw new Error('Não foi possível registrar o pedido agora. Tente novamente.');
+      setRecoveryMessage('Se este e-mail estiver cadastrado, o pedido foi encaminhado para recuperação. O envio automático de e-mail ainda não está configurado; fale com o suporte para receber o link temporário.');
+    } catch (cause) {
+      setRecoveryError(cause instanceof Error ? cause.message : 'Não foi possível registrar o pedido agora.');
+    } finally {
+      setRecoveryBusy(false);
     }
   }
 
@@ -163,6 +188,15 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
             <button className="button primary login-submit" disabled={busy}>{busy ? 'Aguarde…' : mode === 'signup' ? `Criar conta ${profile === 'mei' ? 'MEI' : 'PF'} grátis` : `Entrar como ${profileName}`}<ArrowRight size={18}/></button>
           </form>
           <button className="auth-mode-toggle" type="button" onClick={() => {setMode(mode === 'signup' ? 'login' : 'signup');setError('');}}>{mode === 'signup' ? 'Já tem uma conta? Entrar' : 'Ainda não tem conta? Começar 30 dias grátis'}</button>
+          {mode === 'login' && <button className="auth-mode-toggle recovery-toggle" type="button" onClick={() => {setRecoveryOpen(!recoveryOpen);setRecoveryEmail(email);setRecoveryMessage('');setRecoveryError('');}}>Esqueceu sua senha?</button>}
+          {mode === 'login' && recoveryOpen && <form className="account-auth-form recovery-form" onSubmit={requestRecovery}>
+            <h4>Recuperar acesso</h4>
+            <p>Informe o e-mail da conta. A recuperação respeita o acesso PF ou MEI cadastrado.</p>
+            <label>E-mail da conta<input type="email" autoComplete="email" value={recoveryEmail} onChange={event => setRecoveryEmail(event.target.value)} maxLength={254} required/></label>
+            {recoveryError && <p role="alert" className="login-error">{recoveryError}</p>}
+            {recoveryMessage && <p role="status" className="recovery-status">{recoveryMessage} <a href="/suporte">Abrir suporte</a></p>}
+            <button className="button secondary login-submit" disabled={recoveryBusy}>{recoveryBusy ? 'Registrando pedido…' : 'Solicitar recuperação'}</button>
+          </form>}
           {mode === 'signup' && <p className="test-access-note"><strong>Teste grátis por 30 dias.</strong> Não pedimos cartão e não fazemos cobrança automática. No fim, você escolhe se quer assinar.</p>}
           <div className="login-note"><LockKeyhole size={16}/><p>Para usar PF e MEI separadamente, cada perfil precisa de sua própria conta.</p></div>
           <details id="demo-access" className="demo-access" open={demoOpen} onToggle={event => setDemoOpen(event.currentTarget.open)}>
@@ -181,6 +215,6 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
       </section>
       <div className="landing-install"><InstallAppCard prompt={installPrompt} onPromptUsed={onInstallUsed} variant="login"/></div>
     </main>
-    <footer className="landing-footer"><a className="landing-brand" href="#inicio"><span><Compass size={18}/></span>clareia<span className="landing-brand-dot">.</span></a><p>Mais clareza para cuidar do que é seu. <a className="landing-privacy-link" href="/privacidade">Privacidade</a></p><a href="#acesso">Acessar o Clareia <ArrowUpRight size={14}/></a></footer>
+    <footer className="landing-footer"><a className="landing-brand" href="#inicio"><span><Compass size={18}/></span>clareia<span className="landing-brand-dot">.</span></a><p>Mais clareza para cuidar do que é seu. <a className="landing-privacy-link" href="/privacidade">Privacidade</a> · <a className="landing-privacy-link" href="/suporte">Suporte</a></p><a href="#acesso">Acessar o Clareia <ArrowUpRight size={14}/></a></footer>
   </div>;
 }

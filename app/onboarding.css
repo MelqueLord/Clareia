@@ -5,6 +5,13 @@
 .first-password-card>p{color:var(--muted);font-size:13px;margin-bottom:24px}
 .first-password-card .button{justify-content:center}
 .guided-setup{margin:0 0 24px;padding:26px;background:linear-gradient(125deg,#fff 0%,#f7faf4 100%);border-color:#dce8d9}
+.guided-first-run{position:relative;overflow:hidden;border:2px solid #a9cba7;background:linear-gradient(140deg,#f5faf1 0%,#fff 50%,#eef7ef 100%);box-shadow:0 12px 34px #245b3d18}
+.guided-first-run:before{position:absolute;inset:0 auto 0 0;width:6px;background:linear-gradient(180deg,#0f6b57,#8aae72);content:""}
+.guided-first-run-badge{display:flex;align-items:center;gap:7px;width:max-content;margin:-5px 0 15px;padding:7px 10px;border:1px solid #d6e7d0;border-radius:99px;background:#fff;color:#256149;font-size:10px;font-weight:750;letter-spacing:.4px}
+.guided-first-run-badge svg{color:#649468}.guided-first-run-badge span{margin-left:4px;color:#71816e;font-size:9px;font-weight:550;letter-spacing:0}
+.guided-first-run .guided-heading h2{font-size:23px;color:#164c3c}.guided-first-run .guided-heading p{color:#506c5d;font-size:13px;line-height:1.65}
+.guided-first-run .guided-progress-row{margin-top:18px}.guided-first-run .guided-check.current{border:2px solid #7faa85;background:#eaf5e8;box-shadow:0 3px 12px #245b3d12}.guided-first-run .guided-current-step{border-color:#c7dfc2;box-shadow:0 6px 18px #245b3d0b}.guided-first-run .guided-current-step>.guided-step-title{color:#317552}
+.guided-first-run .guided-current-step .button.primary{min-height:46px;font-weight:700;box-shadow:0 4px 12px #0f6b5724}
 .guided-heading{display:flex;align-items:flex-start;gap:14px}
 .guided-heading>div{min-width:0;flex:1}
 .guided-heading h2{font-size:19px;letter-spacing:-.45px}
@@ -156,4 +163,4 @@
 .install-app-steps li svg{display:inline;vertical-align:-3px;color:#286449}
 .install-app-steps strong,.install-app-help strong{color:#315a44}
 .install-app-message{margin:10px 0 0;color:#356348;font-size:11px}
-@media(max-width:780px){.first-password-card{padding:28px 22px}.first-password-brand{margin-bottom:30px}.guided-setup{padding:20px 17px}.guided-heading h2{font-size:17px}.guided-checklist{grid-template-columns:repeat(2,minmax(0,1fr))}.guided-current-step{padding:16px 13px}.guided-fields{grid-template-columns:1fr;gap:0}.guided-ready{flex-wrap:wrap}.guided-ready>.button{width:100%}.investment-plan-card{align-items:flex-start;flex-direction:column}.investment-plan-actions{width:100%;justify-content:flex-end}}
+@media(max-width:780px){.first-password-card{padding:28px 22px}.first-password-brand{margin-bottom:30px}.guided-setup{padding:20px 17px}.guided-first-run{padding:18px 15px 18px 19px}.guided-first-run .guided-heading{gap:10px}.guided-first-run .guided-heading h2{font-size:20px}.guided-first-run .guided-heading p{font-size:12px}.guided-first-run-badge{margin-top:0}.guided-heading h2{font-size:17px}.guided-checklist{grid-template-columns:repeat(2,minmax(0,1fr))}.guided-current-step{padding:16px 13px}.guided-fields{grid-template-columns:1fr;gap:0}.guided-ready{flex-wrap:wrap}.guided-ready>.button{width:100%}.investment-plan-card{align-items:flex-start;flex-direction:column}.investment-plan-actions{width:100%;justify-content:flex-end}}

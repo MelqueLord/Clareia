@@ -44,6 +44,8 @@ export default function GuidedIntelligence({
   onNavigate: (destination: GuideDestination) => void;
 }) {
   const status = guidedSetupStatus(data, space);
+  const setupActive = !status.ready;
+  const firstRun = setupActive && !status.steps.some(Boolean);
   const preference = data.preferences[space];
   const monthlyGoalsReviewed = !!preference.monthlyGoalsReviewed;
   const hasInvestmentPlan = (data.investmentPlans || []).some(plan => plan.space === space);
@@ -86,15 +88,16 @@ export default function GuidedIntelligence({
   }
 
   const steps = space === 'pf'
-    ? ['Defina sua renda mensal', 'Cadastre uma conta e o saldo atual', 'Registre um recebimento', 'Registre uma despesa ou compromisso']
-    : ['Defina seu faturamento mensal', 'Cadastre uma conta ou caixa do MEI', 'Registre um recebimento do negócio', 'Registre um custo ou compromisso'];
+    ? ['Informe sua renda', 'Cadastre conta e saldo', 'Registre valor recebido', 'Registre uma despesa']
+    : ['Informe seu faturamento', 'Cadastre conta ou caixa', 'Registre receita recebida', 'Registre um custo'];
   const step = status.currentStep;
   const currentTitle = steps[step] || 'Base inicial pronta';
 
-  return <section className="guided-setup panel">
+  return <section className={`guided-setup panel${setupActive ? ' guided-first-run' : ''}`}>
+    {setupActive && <div className="guided-first-run-badge"><Sparkles size={15}/> {firstRun ? 'COMECE AQUI' : 'PASSO A PASSO'} <span>{firstRun ? '4 etapas simples' : 'Continue na ordem indicada'}</span></div>}
     <div className="guided-heading">
       <span className="guided-icon"><Sparkles size={20}/></span>
-      <div><span className="eyebrow">CENTRAL DE INTELIGÊNCIA · SEU PRÓXIMO PASSO</span><h2>{status.ready ? 'Sua base inicial está pronta.' : 'Vamos preparar suas finanças juntos.'}</h2><p>{status.ready ? 'Receitas, saldo e despesas já dão ao Clareia uma base para começar a analisar seus dados.' : 'Siga a ordem sugerida ou toque em qualquer etapa para abrir a tela. Você também pode digitar ou ditar a primeira informação aqui.'}</p></div>
+      <div><span className="eyebrow">CENTRAL DE INTELIGÊNCIA · SEU PRÓXIMO PASSO</span><h2>{status.ready ? 'Sua base inicial está pronta.' : 'Vamos preparar suas finanças juntos.'}</h2><p>{status.ready ? 'Receitas, saldo e despesas já dão ao Clareia uma base para começar a analisar seus dados.' : firstRun ? 'Eu vou orientar cada passo. Comece informando sua renda mensal.' : 'Siga a ordem sugerida ou toque em uma etapa para abrir a tela. Você pode digitar ou ditar a informação.'}</p></div>
     </div>
     <div className="guided-progress-row"><div className="guided-progress"><span style={{ width: `${status.percent}%` }}/></div><strong>{status.ready ? '4 de 4 etapas' : `Etapa ${step + 1} de 4`}</strong></div>
     <div className="guided-checklist" aria-label="Etapas para organizar suas finanças">
@@ -104,13 +107,13 @@ export default function GuidedIntelligence({
     {!status.ready && <div className="guided-current-step">
       <div className="guided-step-title">{space === 'mei' ? <Building2 size={18}/> : <Wallet size={18}/>}<div><span className="eyebrow">PRÓXIMO DADO</span><h3>{currentTitle}</h3></div></div>
       {step === 0 && <form onSubmit={saveIncomeProfile}>
-        <p className="muted">{space === 'pf' ? 'Conte de onde vem sua renda e quanto espera receber por mês. Se sua renda ainda não começou, informe 0.' : 'Conte o que o MEI vende ou presta e quanto espera faturar por mês. Se ainda não faturou, informe 0.'}</p>
-        <label className="guided-note-label">Fale ou digite sua frase<textarea value={note} rows={2} onChange={event => setNote(event.target.value)} placeholder={space === 'pf' ? 'Ex.: Recebo R$ 3.500 por mês de salário' : 'Ex.: Faço bolos e faturo cerca de R$ 4.000 por mês'}/></label>
-        <div className="guided-note-actions"><button type="button" className={`button secondary ${listening ? 'listening-button' : ''}`} onClick={record}>{listening ? <Square size={16}/> : <Mic size={16}/>} {listening ? 'Parar de ouvir' : 'Ditar'}</button><button type="button" className="text-link" disabled={!note.trim()} onClick={applySentence}>Usar frase para preencher <ArrowRight size={14}/></button></div>
+        <p className="muted">{firstRun ? 'Informe de onde vem o dinheiro e quanto recebe por mês. Pode escrever ou ditar.' : space === 'pf' ? 'Conte de onde vem sua renda e quanto espera receber por mês. Se sua renda ainda não começou, informe 0.' : 'Conte o que o MEI vende ou presta e quanto espera faturar por mês. Se ainda não faturou, informe 0.'}</p>
+        <label className="guided-note-label">Escreva ou dite em uma frase<textarea value={note} rows={2} onChange={event => setNote(event.target.value)} placeholder={space === 'pf' ? 'Ex.: Recebo R$ 3.500 por mês de salário' : 'Ex.: Faço bolos e faturo cerca de R$ 4.000 por mês'}/></label>
+        <div className="guided-note-actions"><button type="button" className={`button secondary ${listening ? 'listening-button' : ''}`} onClick={record}>{listening ? <Square size={16}/> : <Mic size={16}/>} {listening ? 'Parar de ouvir' : 'Ditar'}</button><button type="button" className="text-link" disabled={!note.trim()} onClick={applySentence}>Preencher os campos <ArrowRight size={14}/></button></div>
         <div className="form-grid guided-fields"><label>{space === 'pf' ? 'Principal fonte de renda' : 'Atividade que gera faturamento'}<input value={source} onChange={event => setSource(event.target.value)} maxLength={space === 'pf' ? 80 : 120} required placeholder={space === 'pf' ? 'Salário, autônomo, benefício…' : 'Serviços, vendas, alimentação…'}/></label><label>{space === 'pf' ? 'Renda mensal esperada (R$)' : 'Faturamento mensal esperado (R$)'}<MoneyInput value={amount} onChange={setAmount} required placeholder="0,00"/></label></div>
         <p className="small-text muted">A transcrição pode usar o serviço de voz do navegador. O áudio não é armazenado; revise os campos antes de salvar.</p>
         {message && <p className="guided-message" role="status">{message}</p>}
-        <button className="button primary" disabled={saving || listening}>{saving ? 'Salvando…' : 'Salvar receita de referência'} <ArrowRight size={16}/></button>
+        <button className="button primary" disabled={saving || listening}>{saving ? 'Salvando…' : 'Salvar e continuar'} <ArrowRight size={16}/></button>
       </form>}
       {step === 1 && <div className="guided-action"><p className="muted">Cadastre uma conta bancária, carteira ou caixa do negócio e informe o saldo de hoje. Esse saldo será o ponto de partida das projeções.</p><button className="button primary" onClick={onAddAccount}>Cadastrar conta ou caixa <ArrowRight size={16}/></button></div>}
       {step === 2 && <div className="guided-action"><p className="muted">Se já recebeu salário ou outra renda neste mês, use a data em que o dinheiro entrou e marque “Já recebi”. Se ainda vai entrar, deixe como pendente.</p><button className="button primary" onClick={() => onAddTransaction('income')}>Registrar recebimento deste mês <ArrowRight size={16}/></button></div>}
@@ -119,12 +122,12 @@ export default function GuidedIntelligence({
     </div>}
 
     {status.ready && <div className="guided-ready"><CheckCircle2 size={22}/><div><strong>O Clareia já pode analisar sua base inicial.</strong><p>Continue registrando movimentos para refinar as projeções. Depois, complete os dados pessoais ou do MEI e defina metas mensais de gastos para receber orientações mais precisas.</p></div><button className="button primary" onClick={onGoHome}>Abrir visão geral <ArrowRight size={16}/></button></div>}
-    <div className="guided-later">
+    {status.ready && <div className="guided-later">
       <div><span className="eyebrow">DEPOIS DA BASE INICIAL</span><h3>Deixe as orientações mais precisas</h3><p>Revise estes ajustes complementares no seu tempo.</p></div>
       <button type="button" className={`guided-later-link ${monthlyGoalsReviewed ? 'done' : ''}`} onClick={() => onNavigate('monthlyGoals')}><span className="guided-later-status">{monthlyGoalsReviewed ? <Check size={14}/> : '5'}</span><span><strong>Definir metas mensais de gastos</strong><small>{monthlyGoalsReviewed ? 'Revisadas · Planejamento' : 'Planejamento · uma meta mensal por categoria'}</small></span><ArrowRight size={15}/></button>
       <button type="button" className={`guided-later-link ${hasInvestmentPlan ? 'done' : ''}`} onClick={() => onNavigate('investments')}><span className="guided-later-status">{hasInvestmentPlan ? <Check size={14}/> : '6'}</span><span><strong>Planejar investimentos</strong><small>{hasInvestmentPlan ? 'Plano ativo · Planejamento' : 'Planejamento · valor por salário ou outra receita'}</small></span><ArrowRight size={15}/></button>
       <button type="button" className={`guided-later-link ${floorReviewed ? 'done' : ''}`} onClick={() => onNavigate('floor')}><span className="guided-later-status">{floorReviewed ? <Check size={14}/> : '7'}</span><span><strong>Conferir dados e piso de segurança</strong><small>{floorReviewed ? 'Conferido · Ajustes' : space === 'mei' ? 'Ajustes · capital de giro do negócio' : 'Ajustes · valor mínimo para manter disponível'}</small></span><ArrowRight size={15}/></button>
-    </div>
+    </div>}
     {!status.ready && <div className="guided-footnote">Você pode pausar e voltar a esta central quando quiser. Dados só são salvos depois que você confirma cada etapa.</div>}
     {status.ready && <button className="guided-refine-link" onClick={onOpenSettings}>Refinar perfil e preferências <ArrowRight size={14}/></button>}
   </section>;

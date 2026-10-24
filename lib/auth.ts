@@ -37,6 +37,7 @@ export const auth = betterAuth({
           env.DB.prepare('DELETE FROM account_access WHERE user_id=?').bind(user.id),
           env.DB.prepare('DELETE FROM verification WHERE value=? OR identifier=? OR identifier=?')
             .bind(user.id, user.email, `email:${user.email}`),
+          env.DB.prepare('DELETE FROM verification WHERE identifier=?').bind(`support-reset-link:${user.id}`),
         ]);
       },
     },
@@ -96,6 +97,26 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 128,
     disableSignUp: env.AUTH_SIGNUP_ENABLED !== "true",
+    resetPasswordTokenExpiresIn: 60 * 60,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url, token }) => {
+      if (!env.DB) throw new Error('Banco de dados indisponível para registrar a recuperação.');
+      const now = Date.now();
+      const identifier = `support-reset-link:${user.id}`;
+      const activeResetIdentifier = `reset-password:${token}`;
+      // Email delivery is not configured yet. Keep one short-lived link in the
+      // existing verification table for the authorized support administrator.
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM verification WHERE value=? AND identifier LIKE 'reset-password:%' AND identifier<>?").bind(user.id, activeResetIdentifier),
+        env.DB.prepare('DELETE FROM verification WHERE identifier=?').bind(identifier),
+        env.DB.prepare('INSERT INTO verification(id,identifier,value,expires_at,created_at,updated_at) VALUES(?,?,?,?,?,?)')
+          .bind(crypto.randomUUID(), identifier, url, now + 60 * 60 * 1000, now, now),
+      ]);
+    },
+    onPasswordReset: async ({ user }) => {
+      if (!env.DB) return;
+      await env.DB.prepare('DELETE FROM verification WHERE identifier=?').bind(`support-reset-link:${user.id}`).run();
+    },
   },
   rateLimit: {
     enabled: true,
