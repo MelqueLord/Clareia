@@ -93,10 +93,13 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   onSave: (transaction: Transaction, customCard?: Omit<Card, 'id'>, bankToRemember?: string) => void;
   onNeedAccount: () => void;
 }) {
-  const [type, setType] = useState<Kind>(tx?.type || voice?.type || initialType || 'expense');
+  const initialMovementType = tx?.type || voice?.type || initialType || 'expense';
+  const [type, setType] = useState<Kind>(initialMovementType);
   const selectedSpace: Space = tx?.space || voice?.space || space;
-  const isGoalContribution = initialType === 'reserve' && !!initialGoalId && !tx && !voice;
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>(tx?.paymentMethod || (tx?.cardId ? 'credit_card' : '') || voice?.paymentMethod || (voice?.cardId ? 'credit_card' : '') || (initialCardId || cardPurchaseMode ? 'credit_card' : ''));
+  const incomeAccounts = data.accounts.filter(account => account.space === selectedSpace);
+  const priorMovement = [...data.transactions].filter(item => item.space === selectedSpace && item.type === initialMovementType && item.id !== tx?.id).sort((a,b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt))[0];
+  const isGoalContribution = initialType === 'reserve' && !tx && !voice;
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>(tx?.paymentMethod || (tx?.cardId ? 'credit_card' : '') || voice?.paymentMethod || (voice?.cardId ? 'credit_card' : '') || (initialCardId || cardPurchaseMode ? 'credit_card' : '') || (initialMovementType === 'expense' ? priorMovement?.paymentMethod || (priorMovement?.cardId ? 'credit_card' : '') : ''));
   const [manualCardName, setManualCardName] = useState('');
   const [manualCardClosingDay, setManualCardClosingDay] = useState(23);
   const [manualCardDueDay, setManualCardDueDay] = useState(1);
@@ -105,22 +108,22 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const [rememberBankChoice, setRememberBankChoice] = useState<'yes'|'no'|''>('');
   const initialGoal = (data.savingsGoals || []).find(goal => goal.id === initialGoalId && goal.space === selectedSpace);
   const firstIncomeCategory = categoriesFor(selectedSpace, 'income')[0] || 'Outros';
-  const incomeAccounts = data.accounts.filter(account => account.space === selectedSpace);
   const isSpecialType = !['expense', 'income'].includes(type);
   const [showAdvanced, setShowAdvanced] = useState(!!initialCardId || !!tx || (!!voice && !['expense', 'income'].includes(voice.type)) || (!!initialType && !['expense', 'income'].includes(initialType)));
-  const [description, setDescription] = useState(tx?.description || voice?.description || (isGoalContribution ? `Aporte mensal · ${initialGoal?.name || 'Meta'}` : ''));
-  const [category, setCategory] = useState(tx?.category || voice?.category || ((voice?.type || initialType) === 'income' ? firstIncomeCategory : 'Outros'));
+  const [description, setDescription] = useState(tx?.description || voice?.description || (isGoalContribution ? `Valor guardado · ${initialGoal?.name || 'Reserva geral'}` : ''));
+  const [category, setCategory] = useState(tx?.category || voice?.category || priorMovement?.category || (initialMovementType === 'income' ? firstIncomeCategory : 'Outros'));
   const isVariableExtra = type === 'income' && selectedSpace === 'pf' && category === 'Renda extra';
   const [categoryTouched, setCategoryTouched] = useState(!!tx || !!voice);
   const [goalId, setGoalId] = useState(tx?.goalId || voice?.goalId || initialGoalId || '');
-  const [cardId, setCardId] = useState(tx?.cardId || voice?.cardId || initialCardId || '');
+  const [cardId, setCardId] = useState(tx?.cardId || voice?.cardId || initialCardId || (initialMovementType === 'expense' && (tx?.paymentMethod === 'credit_card' || voice?.paymentMethod === 'credit_card' || !tx && !voice && (priorMovement?.paymentMethod === 'credit_card' || !!priorMovement?.cardId)) ? priorMovement?.cardId : '') || '');
   const [installments, setInstallments] = useState(tx?.installments || voice?.installments || 1);
-  const [accountId, setAccountId] = useState(tx?.accountId || voice?.accountId || (!voice && (incomeAccounts.length === 1 || isGoalContribution) ? incomeAccounts[0]?.id || '' : ''));
+  const [accountId, setAccountId] = useState(tx?.accountId || voice?.accountId || (!voice && priorMovement?.accountId) || (!voice && (incomeAccounts.length === 1 || isGoalContribution) ? incomeAccounts[0]?.id || '' : ''));
   const [date, setDate] = useState(tx?.date || voice?.date || asOf);
   const voiceCard = voice?.cardId ? data.cards.find(card => card.id === voice.cardId) : undefined;
   const initialCard = initialCardId ? data.cards.find(card => card.id === initialCardId) : undefined;
   const [due, setDue] = useState(tx?.dueDate || voice?.dueDate || (voice?.type === 'card_payment' && voice.date ? voice.date : voice?.cardId && voice.date && voiceCard ? firstCardDue(voice.date, voiceCard) : voice?.date) || (initialType === 'card_debt' ? '' : initialCard ? firstCardDue(asOf, initialCard) : asOf));
   const [paid, setPaid] = useState(tx?.paid ?? (voice ? voice.statusInferred ? voice.paid : false : true));
+  const [recurringChecked, setRecurringChecked] = useState(!!tx?.recurring);
   const [estimated, setEstimated] = useState(tx?.estimated || false);
   const [amountText, setAmountText] = useState(tx ? String(tx.amount / 100) : voice?.amount ? String(voice.amount / 100) : initialAmount ? String(initialAmount / 100) : '');
   const [investmentEnabled, setInvestmentEnabled] = useState((tx?.investmentAmount || 0) > 0 || (!tx && (voice?.type || initialType || type) === 'income' && !!(data.investmentPlans || []).find(plan => plan.space === selectedSpace && plan.incomeCategory === category)));
@@ -136,6 +139,12 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const savedCardBanks = data.cardBanks?.[selectedSpace] || [];
   const isManualCard = cardId === '__other__';
   const isCreditExpense = type === 'expense' && paymentMethod === 'credit_card' || cardPurchaseMode;
+  const normalizeDescription = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, ' ').trim();
+  const normalizedDescription = normalizeDescription(description);
+  const recurringExample = normalizedDescription && type === 'expense' && !isCreditExpense && !isVariableExtra
+    ? data.transactions.find(item => item.space === selectedSpace && item.type === 'expense' && item.recurring && !item.cardId && item.id !== tx?.id && normalizeDescription(item.description) === normalizedDescription)
+    : undefined;
+  const showRecurringSuggestion = !tx && !voice && !!recurringExample;
   const lastInstallmentDue = due && installments > 0 ? addMonths(due, installments - 1) : '';
   const investmentPlan = (data.investmentPlans || []).find(plan => plan.space === selectedSpace && plan.incomeCategory === category);
   const displayDate = (value: string) => value ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
@@ -291,7 +300,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       cardId: isManualCard ? '' : cardId,
       space: selectedSpace,
       installments: isCreditExpense ? Number(form.get('installments')) || 1 : cardId && type !== 'card_payment' ? Number(form.get('installments')) || 1 : 1,
-      recurring: type !== 'card_debt' && !isVariableExtra && !isCreditExpense && !cardId && form.get('recurring') === 'on',
+      recurring: type !== 'card_debt' && !isVariableExtra && !isCreditExpense && !cardId && recurringChecked,
       paymentMethod: type === 'expense' ? paymentMethod || undefined : undefined,
       recurrenceEndDate: form.get('recurring') === 'on' ? tx?.recurrenceEndDate : undefined,
       source: voice ? 'voice' : tx?.source || 'manual',
@@ -344,7 +353,8 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     </div>}
     {isGoalContribution ? <section className="quick-entry goal-contribution-entry">
       <input type="hidden" name="description" value={description}/><input type="hidden" name="category" value={category}/>
-      <div className="goal-contribution-context"><small>Meta selecionada</small><strong>{initialGoal?.name || 'Sua meta'}</strong><span>{initialAmount ? 'O valor mensal que falta foi preenchido para você. Ajuste se guardou outra quantia.' : 'Informe quanto você conseguiu guardar para esta meta.'}</span></div>
+      <div className="goal-contribution-context"><small>{initialGoal ? 'Meta selecionada' : 'Dinheiro guardado'}</small><strong>{initialGoal?.name || 'Registrar uma reserva'}</strong><span>{initialAmount ? 'O valor mensal que falta foi preenchido para você. Ajuste se guardou outra quantia.' : 'Informe o valor que separou. Você pode associar uma meta ou deixar como reserva geral.'}</span></div>
+      {!!(data.savingsGoals || []).filter(goal => goal.space === selectedSpace).length && <label>Associar a uma meta <span className="muted">(opcional)</span><select value={goalId} onChange={event => setGoalId(event.target.value)}><option value="">Reserva geral</option>{(data.savingsGoals || []).filter(goal => goal.space === selectedSpace).map(goal => <option key={goal.id} value={goal.id}>{goal.name}</option>)}</select></label>}
       <label>Quanto você guardou? (R$)<MoneyInput required name="amount" value={amountText} onChange={changeAmount} placeholder="0,00" autoFocus/></label>
       {incomeAccounts.length > 1 && <label>Em qual conta esse valor ficou guardado?<select required value={accountId} onChange={event => setAccountId(event.target.value)}><option value="">Escolha uma conta</option>{incomeAccounts.map(account => <option key={account.id} value={account.id}>{account.bank} · {account.name}</option>)}</select></label>}
       {incomeAccounts.length === 1 && <p className="quick-account-note">Conta vinculada: {incomeAccounts[0].bank} · {incomeAccounts[0].name}</p>}
@@ -377,6 +387,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       {!isSpecialType && !isCreditExpense && !cardId && !cardPurchaseMode && <fieldset className="settlement-choice quick-settlement"><legend>{type === 'income' ? 'A receita já entrou?' : 'A conta já foi paga?'}</legend><div><label className={paid ? 'selected' : ''}><input type="radio" name="paidStatus" checked={paid} onChange={() => { setPaid(true); setEstimated(false); }}/><span>Sim</span></label><label className={!paid ? 'selected' : ''}><input type="radio" name="paidStatus" checked={!paid} onChange={() => setPaid(false)}/><span>Ainda não</span></label></div></fieldset>}
       {type === 'expense' && cardId && <p className="quick-account-note">Compra no cartão fica pendente até o pagamento da fatura.</p>}
       {type === 'income' && investmentEnabled && investmentPlan && <p className="quick-investment-hint">Seu plano separará {investmentPlan.mode === 'fixed' ? `R$ ${(suggestedInvestment(investmentPlan, amountText) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `${(investmentPlan.value / 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`} desta receita. <span>Você pode alterar em Mais opções.</span></p>}
+      {showRecurringSuggestion && <label className="recurrence-suggestion"><input type="checkbox" name="recurring" checked={recurringChecked} onChange={event => setRecurringChecked(event.target.checked)}/><span><strong>Este gasto se repete todo mês?</strong><small>Já existe um lançamento mensal parecido. Se confirmar, ele entra nas próximas projeções; nenhum gasto futuro será lançado automaticamente.</small></span></label>}
     </section>}
     {!tx && !voice && !isSpecialType && <button className="quick-options-toggle" type="button" aria-expanded={showAdvanced} onClick={() => setShowAdvanced(!showAdvanced)}><span>{showAdvanced ? 'Ocultar opções' : 'Cartão, categoria e outros ajustes (opcional)'}</span><ArrowDown size={15} className={showAdvanced ? 'rotated' : ''}/></button>}
     {!isGoalContribution && (showAdvanced || isSpecialType || !!tx || !!voice) && <section className="advanced-entry">
@@ -398,7 +409,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       {(!cardId || type === 'card_payment') && type !== 'card_debt' && <>
       {['reserve', 'release'].includes(type) ? <label className="checkbox"><input type="checkbox" checked={paid} onChange={event => setPaid(event.target.checked)}/>Confirmo esta alteração no valor separado</label> : isSpecialType && <fieldset className="settlement-choice"><legend>{type === 'income' ? 'Situação da receita' : type === 'transfer' ? 'Situação da transferência' : 'Situação do pagamento'}</legend><div><label className={paid ? 'selected' : ''}><input type="radio" name="paidStatus" checked={paid} onChange={() => { setPaid(true); setEstimated(false); }}/><span>Já {type === 'income' || type === 'refund' ? 'recebi' : type === 'transfer' ? 'transferi' : 'paguei'}</span></label><label className={!paid ? 'selected' : ''}><input type="radio" name="paidStatus" checked={!paid} onChange={() => setPaid(false)}/><span>Ainda vou {type === 'income' || type === 'refund' ? 'receber' : type === 'transfer' ? 'transferir' : 'pagar'}</span></label></div></fieldset>}
       {type === 'income' && !paid && <label className="checkbox"><input type="checkbox" checked={estimated} onChange={event => setEstimated(event.target.checked)}/>Receita apenas estimada (fora do saldo projetado)</label>}
-      {!['transfer', 'card_payment', 'card_debt', 'reserve', 'release'].includes(type) && !isVariableExtra && <label className="checkbox"><input type="checkbox" name="recurring" defaultChecked={tx?.recurring}/>Repetir mensalmente na projeção</label>}
+      {!showRecurringSuggestion && !['transfer', 'card_payment', 'card_debt', 'reserve', 'release'].includes(type) && !isVariableExtra && <label className="checkbox"><input type="checkbox" name="recurring" checked={recurringChecked} onChange={event => setRecurringChecked(event.target.checked)}/>Repetir mensalmente na projeção</label>}
     </>}
     {type === 'income' && <section className="investment-entry">
       <label className="checkbox"><input type="checkbox" checked={investmentEnabled} onChange={event => { setInvestmentEnabled(event.target.checked); if (event.target.checked && !investmentAmount && investmentPlan) setInvestmentAmount(String(suggestedInvestment(investmentPlan, amountText) / 100)); }}/>Separar parte desta receita para investimento</label>

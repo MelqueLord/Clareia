@@ -50,6 +50,13 @@ export default function GuidedIntelligence({
   const monthlyGoalsReviewed = !!preference.monthlyGoalsReviewed;
   const hasInvestmentPlan = (data.investmentPlans || []).some(plan => plan.space === space);
   const floorReviewed = preference.floor !== null && preference.complete && !!preference.checkedOn;
+  const nextRefinement: { destination: GuideDestination; title: string; description: string } | null = !monthlyGoalsReviewed
+    ? { destination: 'monthlyGoals', title: 'Definir metas mensais de gastos', description: 'Planejamento · uma meta mensal por categoria' }
+    : !hasInvestmentPlan
+      ? { destination: 'investments', title: 'Planejar investimentos', description: 'Planejamento · valor por salário ou outra receita' }
+      : !floorReviewed
+        ? { destination: 'floor', title: 'Conferir dados e piso de segurança', description: space === 'mei' ? 'Ajustes · capital de giro do negócio' : 'Ajustes · valor mínimo para manter disponível' }
+        : null;
   const initialSource = space === 'pf' ? data.profiles.pf.incomeSource : data.profiles.mei.activity;
   const initialAmount = space === 'pf' ? data.profiles.pf.monthlyIncomeTarget : data.profiles.mei.monthlyRevenueTarget;
   const initialIncomePattern = data.profiles.pf.incomePattern || 'fixed';
@@ -129,10 +136,8 @@ export default function GuidedIntelligence({
 
     {status.ready && <div className="guided-ready"><CheckCircle2 size={22}/><div><strong>Seu assistente já pode acompanhar suas finanças.</strong><p>Continue registrando movimentos para atualizar as projeções. As orientações ficam mais úteis conforme você completa os dados pessoais ou do MEI e define suas metas mensais.</p></div><button className="button primary" onClick={onGoHome}>Abrir visão geral <ArrowRight size={16}/></button></div>}
     {status.ready && <div className="guided-later">
-      <div><span className="eyebrow">DEPOIS DA BASE INICIAL</span><h3>Deixe as orientações mais precisas</h3><p>Revise estes ajustes complementares no seu tempo.</p></div>
-      <button type="button" className={`guided-later-link ${monthlyGoalsReviewed ? 'done' : ''}`} onClick={() => onNavigate('monthlyGoals')}><span className="guided-later-status">{monthlyGoalsReviewed ? <Check size={14}/> : '5'}</span><span><strong>Definir metas mensais de gastos</strong><small>{monthlyGoalsReviewed ? 'Revisadas · Planejamento' : 'Planejamento · uma meta mensal por categoria'}</small></span><ArrowRight size={15}/></button>
-      <button type="button" className={`guided-later-link ${hasInvestmentPlan ? 'done' : ''}`} onClick={() => onNavigate('investments')}><span className="guided-later-status">{hasInvestmentPlan ? <Check size={14}/> : '6'}</span><span><strong>Planejar investimentos</strong><small>{hasInvestmentPlan ? 'Plano ativo · Planejamento' : 'Planejamento · valor por salário ou outra receita'}</small></span><ArrowRight size={15}/></button>
-      <button type="button" className={`guided-later-link ${floorReviewed ? 'done' : ''}`} onClick={() => onNavigate('floor')}><span className="guided-later-status">{floorReviewed ? <Check size={14}/> : '7'}</span><span><strong>Conferir dados e piso de segurança</strong><small>{floorReviewed ? 'Conferido · Ajustes' : space === 'mei' ? 'Ajustes · capital de giro do negócio' : 'Ajustes · valor mínimo para manter disponível'}</small></span><ArrowRight size={15}/></button>
+      <div><span className="eyebrow">DEPOIS DA BASE INICIAL</span><h3>{nextRefinement ? 'Seu próximo passo' : 'Tudo em dia'}</h3><p>{nextRefinement ? 'Uma orientação por vez. O próximo item aparece depois que você concluir este.' : 'Metas, investimentos e piso de segurança já foram revisados.'}</p></div>
+      {nextRefinement ? <button type="button" className="guided-later-link" onClick={() => onNavigate(nextRefinement.destination)}><span className="guided-later-status">5</span><span><strong>{nextRefinement.title}</strong><small>{nextRefinement.description}</small></span><ArrowRight size={15}/></button> : <div className="guided-later-complete"><CheckCircle2 size={18}/><span>Sem outra etapa pendente agora.</span></div>}
     </div>}
     {!status.ready && <div className="guided-footnote">Você pode pausar e voltar a esta central quando quiser. Dados só são salvos depois que você confirma cada etapa.</div>}
     {status.ready && <button className="guided-refine-link" onClick={onOpenSettings}>Refinar perfil e preferências <ArrowRight size={14}/></button>}
