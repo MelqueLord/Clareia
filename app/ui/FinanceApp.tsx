@@ -24,6 +24,7 @@ import InstallAppCard from './InstallAppCard';
 import LoginScreen from './LoginScreen';
 import useSpeechCapture from './useSpeechCapture';
 import { dataSchema } from '../../lib/validation';
+import { bankInstitutions as banks, normalizeBankName, uniqueBankNames } from '../../lib/banks';
 import type { AccountAccess } from '../../lib/trial';
 import TrialManagementPanel from './TrialManagementPanel';
 import AccountPrivacyPanel from './AccountPrivacyPanel';
@@ -31,7 +32,6 @@ import SupportRecoveryPanel from './SupportRecoveryPanel';
 
 type Page='home'|'transactions'|'planning'|'insights'|'accounts'|'settings';
 const nav=[{id:'home',label:'Visão geral',icon:Home},{id:'transactions',label:'Lançamentos',icon:ArrowLeftRight},{id:'planning',label:'Planejamento',icon:BarChart3},{id:'insights',label:'Inteligência',icon:Sparkles},{id:'accounts',label:'Contas e cartões',icon:Wallet},{id:'settings',label:'Ajustes',icon:Settings2}] as const;
-const banks=['Banco do Brasil','Bradesco','Caixa Econômica Federal','Itaú Unibanco','Santander','Nubank','Banco Inter','C6 Bank','Banco Original','BTG Pactual','Sicoob','Sicredi','Banco do Nordeste','Banrisul','Banco PAN','Mercado Pago','PagBank','PicPay','Neon','Banco Safra','Banco BMG','Banestes','BRB','Banco BV','Banco BS2','Stone','XP','Digio','Outro'];
 type User={id:string;name:string;email:string;defaultSpace:Space;isTest:boolean;mustChangePassword?:boolean;isAdmin?:boolean};
 function TrialPaywall({user,access,data,onSignOut}:{user:User;access:AccountAccess;data:FinanceData;onSignOut:()=>Promise<void>}){
  const [requestState,setRequestState]=useState(access.subscriptionRequestedAt?'sent':'idle');const [requestError,setRequestError]=useState('');const isMei=user.defaultSpace==='mei';const price=isMei?'29,90':'19,90';
@@ -57,9 +57,9 @@ export default function FinanceApp(){
  useEffect(()=>{if(page!=='settings'||!settingsTarget)return;const targetId=settingsTarget==='floor'?'safety-floor':'profile-settings';document.getElementById(targetId)?.scrollIntoView({behavior:'smooth',block:'start'});setSettingsTarget(null);},[page,settingsTarget]);
   useEffect(()=>{if(page!=='planning'||!planningTarget)return;const targetId=planningTarget==='monthlyGoals'?'monthly-goals':planningTarget==='investments'?'investment-plans':'savings-goals';document.getElementById(targetId)?.scrollIntoView({behavior:'smooth',block:'start'});setPlanningTarget(null);},[page,planningTarget]);
  async function save(next:FinanceData,action:string){const checked=dataSchema.safeParse(next);if(!checked.success){notify(checked.error.issues[0].message);return false;}if(demo){setData(next);notify('Alteração temporária na demonstração. Seus dados reais e os de outros visitantes não foram afetados.');return true;}if(!user){window.location.href='/';return false;}setSaving(true);try{const response=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:next,revision,mutationId:id(),action})});const result=await response.json() as {error:string;revision:number;updatedAt:string;code?:string};if(response.status===402||result.code==='TRIAL_EXPIRED'){setAccess(current=>current?{...current,status:'expired',canUse:false,daysRemaining:0}:current);throw new Error(result.error||'Seu teste grátis terminou. Escolha um plano para continuar.');}if(!response.ok)throw new Error(result.error);setRevision(result.revision);setData(next);setRealData(next);setDemo(false);notify('Salvo na sua conta.');return true;}catch(e){notify((e as Error).message);return false;}finally{setSaving(false);}}
- async function saveTransaction(tx:Transaction,customCard?:Omit<Card,'id'>){
+ async function saveTransaction(tx:Transaction,customCard?:Omit<Card,'id'>,bankToRemember?:string){
   let transaction=tx;let baseData=data;
-  if(customCard){if(!online&&!demo&&!editing){notify('Conecte-se para salvar o novo cartão junto com a compra.');return;}const cardId=id();const savedCard:Card={...customCard,id:cardId};transaction={...tx,cardId,accountId:savedCard.accountId,paid:false};baseData={...data,cards:[...data.cards,savedCard]};}
+   if(customCard){if(!online&&!demo&&!editing){notify('Conecte-se para salvar o novo cartão junto com a compra.');return;}const cardId=id();const savedCard:Card={...customCard,id:cardId,name:normalizeBankName(customCard.name)};transaction={...tx,cardId,accountId:savedCard.accountId,paid:false};const cardBanks={pf:data.cardBanks?.pf||[],mei:data.cardBanks?.mei||[]};if(bankToRemember)cardBanks[customCard.space]=uniqueBankNames([...cardBanks[customCard.space],bankToRemember]);baseData={...data,cards:[...data.cards,savedCard],cardBanks};}
   if(voiceQueue.length){
     const reviewed=[...voiceReviewed.slice(0,voiceIndex),transaction];
     if(voiceIndex<voiceQueue.length-1){setVoiceReviewed(reviewed);setVoiceIndex(voiceIndex+1);setVoiceDraft(voiceQueue[voiceIndex+1]);setEditing(null);return;}

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowDown, ArrowRight, Mic } from 'lucide-react';
+import { ArrowDown, ArrowRight, Mic, Search } from 'lucide-react';
 import type { Card, FinanceData, InvestmentPlan, Kind, PaymentMethod, Space, Transaction } from '../../lib/model';
 import { addMonths, categoriesFor, cents, firstCardDue, id, money, withDay } from '../../lib/model';
+import { bankInstitutions, bankSearchKey, normalizeBankName, uniqueBankNames } from '../../lib/banks';
 import { parseVoice, type VoiceDraft } from '../../lib/voice';
 import MoneyInput from './MoneyInput';
 
@@ -22,6 +23,44 @@ function manualCardDue(date: string, closingDay: number, dueDay: number) {
   return withDay(addMonths(date, monthOffset), dueDay);
 }
 
+function CreditCardPicker({ cards, cardId, search, manualCardName, savedBanks, onSearch, onChange }: {
+  cards: Card[]; cardId: string; search: string; manualCardName: string; savedBanks: string[];
+  onSearch: (value: string) => void; onChange: (value: string) => void;
+}) {
+  const key = bankSearchKey(search);
+  const matches = cards.filter(card => !key || bankSearchKey(card.name).includes(key));
+  const selectedCard = cards.find(card => card.id === cardId);
+  const visibleCards = selectedCard && !matches.some(card => card.id === selectedCard.id) ? [selectedCard, ...matches] : matches;
+  const mainBanks = bankInstitutions.filter(item => item !== 'Outro')
+    .filter(name => (!key || bankSearchKey(name).includes(key)) && !cards.some(card => bankSearchKey(card.name) === bankSearchKey(name)));
+  const savedBankOptions = uniqueBankNames(savedBanks)
+    .filter(name => !bankInstitutions.some(bank => bank !== 'Outro' && bankSearchKey(bank) === bankSearchKey(name)))
+    .filter(name => !key || bankSearchKey(name).includes(key));
+
+  return <div className="credit-card-picker">
+    <label className="card-search-field">Buscar cartão ou banco<span className="card-search-control"><Search size={16}/><input type="search" value={search} onChange={event => onSearch(event.target.value)} placeholder="Ex.: Nubank, Itaú, Inter" autoComplete="off"/></span></label>
+    <label>Cartão de crédito<select required value={cardId} onChange={event => onChange(event.target.value)}>
+      <option value="">Selecione o cartão</option>
+      {visibleCards.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+      {!!mainBanks.length && <optgroup label="Bancos principais">{mainBanks.map(bank => <option key={bank} value={'bank:'+bank}>{bank} · novo cartão</option>)}</optgroup>}
+      {!!savedBankOptions.length && <optgroup label="Seus bancos salvos">{savedBankOptions.map(bank => <option key={bank} value={'saved-bank:'+bank}>{bank} · outro cartão</option>)}</optgroup>}
+      <option value="__other__">{manualCardName ? `Novo · ${manualCardName}` : 'Outro banco ou cartão'}</option>
+    </select></label>
+    {!!search && !visibleCards.length && !mainBanks.length && !savedBankOptions.length && <small className="muted">Não encontrou? Selecione “Outro banco ou cartão” para informar.</small>}
+  </div>;
+}
+
+function SaveBankChoice({ name, value, onChange }: { name: string; value: 'yes'|'no'|''; onChange: (value: 'yes'|'no') => void }) {
+  return <fieldset className="settlement-choice quick-settlement card-bank-choice">
+    <legend>Adicionar <strong>{normalizeBankName(name)}</strong> à sua lista rápida?</legend>
+    <div>
+      <label className={value === 'yes' ? 'selected' : ''}><input type="radio" name="rememberCardBank" checked={value === 'yes'} onChange={() => onChange('yes')}/><span>Sim</span></label>
+      <label className={value === 'no' ? 'selected' : ''}><input type="radio" name="rememberCardBank" checked={value === 'no'} onChange={() => onChange('no')}/><span>Agora não</span></label>
+    </div>
+    <small className="muted">O cartão usado nesta compra será salvo para acompanhar as parcelas. Esta escolha guarda o banco como uma opção rápida para outras compras.</small>
+  </fieldset>;
+}
+
 export default function TransactionForm({ data, space, asOf, tx, voice, initialType, initialGoalId, initialAmount, cardPurchaseMode = false, initialCardId = '', saving, submitLabel, onSave, onNeedAccount }: {
   data: FinanceData;
   space: Space;
@@ -35,7 +74,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   initialCardId?: string;
   saving: boolean;
   submitLabel?: string;
-  onSave: (transaction: Transaction, customCard?: Omit<Card, 'id'>) => void;
+  onSave: (transaction: Transaction, customCard?: Omit<Card, 'id'>, bankToRemember?: string) => void;
   onNeedAccount: () => void;
 }) {
   const [type, setType] = useState<Kind>(tx?.type || voice?.type || initialType || 'expense');
@@ -45,6 +84,9 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const [manualCardName, setManualCardName] = useState('');
   const [manualCardClosingDay, setManualCardClosingDay] = useState(23);
   const [manualCardDueDay, setManualCardDueDay] = useState(1);
+  const [cardSearch, setCardSearch] = useState('');
+  const [manualBankMode, setManualBankMode] = useState(false);
+  const [rememberBankChoice, setRememberBankChoice] = useState<'yes'|'no'|''>('');
   const initialGoal = (data.savingsGoals || []).find(goal => goal.id === initialGoalId && goal.space === selectedSpace);
   const firstIncomeCategory = categoriesFor(selectedSpace, 'income')[0] || 'Outros';
   const incomeAccounts = data.accounts.filter(account => account.space === selectedSpace);
@@ -75,6 +117,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const [message, setMessage] = useState('');
   const card = data.cards.find(item => item.id === cardId);
   const availableCards = data.cards.filter(item => item.space === selectedSpace);
+  const savedCardBanks = data.cardBanks?.[selectedSpace] || [];
   const isManualCard = cardId === '__other__';
   const isCreditExpense = type === 'expense' && paymentMethod === 'credit_card' || cardPurchaseMode;
   const lastInstallmentDue = due && installments > 0 ? addMonths(due, installments - 1) : '';
@@ -99,6 +142,10 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     if (nextMethod === 'credit_card') {
       const preferredCard = availableCards.length === 1 ? availableCards[0] : undefined;
       setCardId(preferredCard?.id || (availableCards.length ? '' : '__other__'));
+      setManualCardName('');
+      setManualBankMode(!preferredCard && !availableCards.length);
+      setRememberBankChoice('');
+      setCardSearch('');
       setInstallments(1);
       setPaid(false);
       if (preferredCard) {
@@ -110,6 +157,9 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     }
     setCardId('');
     setManualCardName('');
+    setManualBankMode(false);
+    setRememberBankChoice('');
+    setCardSearch('');
     setInstallments(1);
     setDue(date);
     setPaid(true);
@@ -117,13 +167,33 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   }
 
   function chooseCard(value: string) {
-    setCardId(value);
     setMessage('');
+    if (value.startsWith('bank:') || value.startsWith('saved-bank:')) {
+      const isSavedBankOption = value.startsWith('saved-bank:');
+      const bank = normalizeBankName(value.slice(isSavedBankOption ? 11 : 5));
+      const existing = isSavedBankOption ? undefined : availableCards.find(item => bankSearchKey(item.name) === bankSearchKey(bank));
+      setManualCardName(existing ? '' : bank);
+      setManualBankMode(false);
+      setRememberBankChoice('');
+      setCardId(existing?.id || '__other__');
+      setCardSearch('');
+      setDue(existing ? firstCardDue(date, existing) : manualCardDue(date, manualCardClosingDay, manualCardDueDay));
+      setPaid(false);
+      return;
+    }
+    setCardId(value);
     if (value === '__other__') {
+      setManualBankMode(true);
+      setManualCardName('');
+      setRememberBankChoice('');
       setDue(manualCardDue(date, manualCardClosingDay, manualCardDueDay));
       setPaid(false);
       return;
     }
+    setManualBankMode(false);
+    setManualCardName('');
+    setRememberBankChoice('');
+    setCardSearch('');
     const selectedCard = availableCards.find(item => item.id === value);
     if (selectedCard) {
       setDue(firstCardDue(date, selectedCard));
@@ -143,6 +213,10 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     if (!['expense', 'income'].includes(nextType)) setShowAdvanced(true);
     if (!['expense', 'income'].includes(nextType)) setCategoryTouched(true);
     setCardId('');
+    setManualCardName('');
+    setManualBankMode(false);
+    setRememberBankChoice('');
+    setCardSearch('');
     setInstallments(1);
     const options = categoriesFor(selectedSpace, nextType === 'income' ? 'income' : 'expense');
     const nextCategory = nextType === 'income' && selectedSpace === 'pf' && category === 'Outros' ? 'Salário' : options.includes(category) ? category : options[0] || 'Outros';
@@ -184,7 +258,8 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const investmentValue = type === 'income' && investmentEnabled ? cents(investmentAmount || '0') : undefined;
-    const customCard: Omit<Card, 'id'> | undefined = isCreditExpense && isManualCard ? { name: manualCardName.trim().slice(0, 80), space: selectedSpace, accountId: '', limit: null, closingDay: manualCardClosingDay, dueDay: manualCardDueDay } : undefined;
+    const customCard: Omit<Card, 'id'> | undefined = isCreditExpense && isManualCard ? { name: normalizeBankName(manualCardName).slice(0, 80), space: selectedSpace, accountId: '', limit: null, closingDay: manualCardClosingDay, dueDay: manualCardDueDay } : undefined;
+    const bankToRemember = isManualCard && manualBankMode && rememberBankChoice === 'yes' ? normalizeBankName(manualCardName) : undefined;
     const transaction: Transaction = {
       id: tx?.id || id(),
       description: String(form.get('description')).trim(),
@@ -215,20 +290,22 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     if (type === 'expense' && !accountId && !isCreditExpense) { setMessage('Escolha a conta de onde saiu o valor.'); return; }
     if (isCreditExpense && !isManualCard && !cardId) { setMessage('Selecione um cartão de crédito.'); return; }
     if (isManualCard && !manualCardName.trim()) { setMessage('Informe o nome do cartão.'); return; }
+    if (isManualCard && manualBankMode && rememberBankChoice === '') { setMessage('Escolha se deseja incluir este banco na sua lista rápida.'); return; }
     if (transaction.paid && transaction.dueDate > asOf) { setMessage('Uma movimentação futura deve ficar como pendente.'); return; }
     if (investmentEnabled && type === 'income' && (!Number.isSafeInteger(investmentValue) || !investmentValue)) { setMessage('Informe quanto pretende separar ou desmarque a opção de investimento.'); return; }
     if (investmentValue !== undefined && investmentValue > transaction.amount) { setMessage('O valor separado não pode ser maior que esta receita.'); return; }
     if (investmentTypeChoice === 'Outro' && investmentEnabled && type === 'income' && !customInvestmentType.trim()) { setMessage('Informe o tipo de investimento ou escolha outra opção.'); return; }
-    onSave(transaction, customCard);
+    onSave(transaction, customCard, bankToRemember);
   }}>
     {cardPurchaseMode && !tx && !voice ? <section className="card-entry-form">
       <p className="card-entry-kicker">Compra no cartão · {selectedSpace === 'mei' ? 'Meu MEI' : 'Pessoal'}</p>
       <p className="card-entry-help">Informe o total. O Clareia distribui as parcelas nas faturas automaticamente. A conta de pagamento pode ser escolhida ao registrar a quitação. A conta de pagamento pode ser escolhida ao registrar a quitação.</p>
       <label>O que você comprou?<input required name="description" value={description} onChange={event => setDescription(event.target.value)} onBlur={inferCategory} placeholder="Ex.: celular, mercado" maxLength={180}/></label>
       <div className="form-grid card-entry-grid"><label>Valor total da compra (R$)<MoneyInput required name="amount" value={amountText} onChange={changeAmount} placeholder="0,00"/></label><label>Data da compra<input required type="date" value={date} onChange={event => { const value = event.target.value; setDate(value); const selected = data.cards.find(item => item.id === cardId); setDue(selected ? firstCardDue(value, selected) : manualCardDue(value, manualCardClosingDay, manualCardDueDay)); }}/></label></div>
-      <label>Cartão de crédito<select required value={cardId} onChange={event => chooseCard(event.target.value)}><option value="">Selecione o cartão</option>{availableCards.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}<option value="__other__">Outro cartão · informar nome</option></select></label>
+       <CreditCardPicker cards={availableCards} cardId={cardId} search={cardSearch} manualCardName={manualCardName} savedBanks={savedCardBanks} onSearch={setCardSearch} onChange={chooseCard}/>
       {isManualCard && <>
-        <label>Nome do cartão<input required maxLength={80} value={manualCardName} onChange={event => setManualCardName(event.target.value)} placeholder="Ex.: cartão da loja"/></label>
+         <label>Banco ou nome do cartão<input required maxLength={80} value={manualCardName} onChange={event => setManualCardName(event.target.value)} onBlur={() => setManualCardName(normalizeBankName(manualCardName))} placeholder="Ex.: Nubank, Itaú ou cartão da loja"/></label>
+         {manualBankMode && manualCardName.trim() && <SaveBankChoice name={manualCardName} value={rememberBankChoice} onChange={setRememberBankChoice}/>}
         <details className="card-category-option"><summary>Ajustar fechamento e vencimento do cartão</summary><div className="form-grid"><label>Fecha no dia<input type="number" min="1" max="28" value={manualCardClosingDay} onChange={event => { const value = Math.max(1, Math.min(28, Number(event.target.value) || 1)); setManualCardClosingDay(value); setDue(manualCardDue(date, value, manualCardDueDay)); }}/></label><label>Vence no dia<input type="number" min="1" max="28" value={manualCardDueDay} onChange={event => { const value = Math.max(1, Math.min(28, Number(event.target.value) || 1)); setManualCardDueDay(value); setDue(manualCardDue(date, manualCardClosingDay, value)); }}/></label></div></details>
       </>}
       <div className="form-grid card-entry-grid"><label>Vencimento da 1ª parcela<input required type="date" value={due} onChange={event => setDue(event.target.value)}/></label><label>Parcelas<input name="installments" type="number" min="1" max="36" value={installments} onChange={event => setInstallments(Math.max(1, Math.min(36, Number(event.target.value) || 1)))}/></label></div>
@@ -274,8 +351,8 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       {!isSpecialType && !tx && !voice && <label>{isCreditExpense ? 'Data da compra' : type === 'income' ? paid ? 'Data em que recebeu' : 'Data prevista para receber' : paid ? 'Data em que pagou' : 'Data prevista para pagar'}<input required type="date" value={date} onChange={event => { const value = event.target.value; setDate(value); const selectedCard = availableCards.find(item => item.id === cardId); setDue(selectedCard ? firstCardDue(value, selectedCard) : isManualCard ? manualCardDue(value, manualCardClosingDay, manualCardDueDay) : value); }}/></label>}
       {type === 'expense' && !cardPurchaseMode && <label className="payment-method-select">Forma de pagamento<select required value={paymentMethod} onChange={event => choosePaymentMethod(event.target.value as PaymentMethod | '')}><option value="">Escolha como pagou</option><option value="credit_card">Cartão de crédito</option><option value="debit">Débito</option><option value="pix">Pix</option></select></label>}
       {type === 'expense' && !cardPurchaseMode && paymentMethod === 'credit_card' && <div className="expense-payment-details">
-        <label>Cartão de crédito<select required value={cardId} onChange={event => chooseCard(event.target.value)}><option value="">Selecione o cartão</option>{availableCards.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}<option value="__other__">Outro cartão · escrever</option></select></label>
-        {isManualCard && <><label>Nome do cartão<input required maxLength={80} value={manualCardName} onChange={event => setManualCardName(event.target.value)} placeholder="Ex.: cartão da loja"/></label><details className="card-category-option"><summary>Ajustar fechamento do cartão (opcional)</summary><div className="form-grid"><label>Fecha no dia<input type="number" min="1" max="28" value={manualCardClosingDay} onChange={event => { const value = Math.max(1, Math.min(28, Number(event.target.value) || 1)); setManualCardClosingDay(value); setDue(manualCardDue(date, value, manualCardDueDay)); }}/></label><label>Vence no dia<input type="number" min="1" max="28" value={manualCardDueDay} onChange={event => { const value = Math.max(1, Math.min(28, Number(event.target.value) || 1)); setManualCardDueDay(value); setDue(manualCardDue(date, manualCardClosingDay, value)); }}/></label></div></details></>}
+        <CreditCardPicker cards={availableCards} cardId={cardId} search={cardSearch} manualCardName={manualCardName} savedBanks={savedCardBanks} onSearch={setCardSearch} onChange={chooseCard}/>
+        {isManualCard && <><label>Banco ou nome do cartão<input required maxLength={80} value={manualCardName} onChange={event => setManualCardName(event.target.value)} onBlur={() => setManualCardName(normalizeBankName(manualCardName))} placeholder="Ex.: Nubank, Itaú ou cartão da loja"/></label>{manualBankMode && manualCardName.trim() && <SaveBankChoice name={manualCardName} value={rememberBankChoice} onChange={setRememberBankChoice}/>}<details className="card-category-option"><summary>Ajustar fechamento do cartão (opcional)</summary><div className="form-grid"><label>Fecha no dia<input type="number" min="1" max="28" value={manualCardClosingDay} onChange={event => { const value = Math.max(1, Math.min(28, Number(event.target.value) || 1)); setManualCardClosingDay(value); setDue(manualCardDue(date, value, manualCardDueDay)); }}/></label><label>Vence no dia<input type="number" min="1" max="28" value={manualCardDueDay} onChange={event => { const value = Math.max(1, Math.min(28, Number(event.target.value) || 1)); setManualCardDueDay(value); setDue(manualCardDue(date, manualCardClosingDay, value)); }}/></label></div></details></>}
         {(card || isManualCard && manualCardName.trim()) && <><label>Vencimento da 1ª parcela<input required type="date" value={due} onChange={event => setDue(event.target.value)}/></label><label>Parcelas<input name="installments" type="number" min="1" max="36" value={installments} onChange={event => setInstallments(Math.max(1, Math.min(36, Number(event.target.value) || 1)))}/></label><div className="card-entry-summary"><strong>{installments} parcela{installments === 1 ? '' : 's'} de aproximadamente {money(Math.ceil(cents(amountText || '0') / installments))}</strong><span>Primeira: {displayDate(due)} · última: {displayDate(lastInstallmentDue)}</span></div></>}
       </div>}
       {type === 'expense' && !cardPurchaseMode && (paymentMethod === 'debit' || paymentMethod === 'pix') && <>{incomeAccounts.length > 1 ? <label className="quick-account-select">Conta de saída<select required value={accountId} onChange={event => setAccountId(event.target.value)}><option value="">Selecione o banco e a conta</option>{incomeAccounts.map(account => <option key={account.id} value={account.id}>{account.bank} · {account.name}</option>)}</select></label> : incomeAccounts.length === 1 ? <p className="quick-account-note">Valor sai de {incomeAccounts[0].bank} · {incomeAccounts[0].name}</p> : <div className="notice income-account-notice">Cadastre uma conta bancária para continuar.<button type="button" className="text-link" onClick={onNeedAccount}>Cadastrar conta <ArrowRight size={14}/></button></div>}</>}
