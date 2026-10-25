@@ -31,7 +31,7 @@ export async function POST(req:Request){
   data.preferences[space==='pf'?'mei':'pf']={floor:null,complete:false,checkedOn:''};
   const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join(''),now=new Date().toISOString();
   await env.DB.batch([
-   env.DB.prepare('INSERT OR IGNORE INTO finance_documents(user_id,payload,revision,mutation_id,updated_at) VALUES(?,?,1,?,?)').bind(userId,JSON.stringify(data),crypto.randomUUID(),now),
+   env.DB.prepare('INSERT INTO finance_documents(user_id,payload,revision,mutation_id,updated_at) VALUES(?,?,1,?,?) ON CONFLICT(user_id) DO UPDATE SET payload=excluded.payload,revision=finance_documents.revision+1,mutation_id=excluded.mutation_id,updated_at=excluded.updated_at').bind(userId,JSON.stringify(data),crypto.randomUUID(),now),
    env.DB.prepare('INSERT INTO test_sessions(token_hash,user_id,display_name,email,space,expires_at) VALUES(?,?,?,?,?,?)').bind(await tokenHash(token),userId,name,username,space,new Date(Date.now()+86400000).toISOString()),
    env.DB.prepare('DELETE FROM test_sessions WHERE expires_at<?').bind(now)
   ]);

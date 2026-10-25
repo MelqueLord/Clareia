@@ -63,7 +63,7 @@ export async function GET(req:Request){
 }
 export async function POST(req:Request){
  if(!allowed(req)||!req.headers.get('content-type')?.includes('application/json'))return reply({error:'Origem inválida.'},403);
- const user=await getFinanceUser(req);if(!user)return reply({error:'Sua sessão terminou. Entre novamente.'},401);if(user.mustChangePassword)return reply({error:'Altere sua senha antes de acessar seus dados.'},403);if(!env.DB)return reply({error:'Banco indisponível.'},503);
+ const user=await getFinanceUser(req);if(!user)return reply({error:'Sua sessão terminou. Entre novamente.'},401);if(user.isTest)return reply({error:'A demonstração não grava alterações compartilhadas.'},403);if(user.mustChangePassword)return reply({error:'Altere sua senha antes de acessar seus dados.'},403);if(!env.DB)return reply({error:'Banco indisponível.'},503);
  try{
   if(!user.isTest){const access=await getAccountAccess(user.authUserId!);if(!access.canUse)return reply({error:'Seu teste grátis terminou. Escolha um plano para continuar.',code:'TRIAL_EXPIRED'},402);}
   const raw=await req.text();if(raw.length>2000000)return reply({error:'Limite de dados excedido.'},413);
@@ -89,7 +89,7 @@ export async function POST(req:Request){
 }
 export async function DELETE(req:Request){
  if(!allowed(req)||req.headers.get('x-confirm-delete')!=='EXCLUIR')return reply({error:'Confirmação necessária.'},400);
- const user=await getFinanceUser(req);if(!user)return reply({error:'Sessão necessária.'},401);if(user.mustChangePassword)return reply({error:'Altere sua senha antes de acessar seus dados.'},403);if(!env.DB)return reply({error:'Banco indisponível.'},503);
+ const user=await getFinanceUser(req);if(!user)return reply({error:'Sessão necessária.'},401);if(user.isTest)return reply({error:'A demonstração não pode excluir os dados compartilhados.'},403);if(user.mustChangePassword)return reply({error:'Altere sua senha antes de acessar seus dados.'},403);if(!env.DB)return reply({error:'Banco indisponível.'},503);
  await env.DB.batch(['finance_documents','finance_snapshots','finance_audit','push_subscriptions'].map(table=>env.DB!.prepare('DELETE FROM '+table+' WHERE user_id=?').bind(user.userId)));
  return reply({deleted:true});
 }

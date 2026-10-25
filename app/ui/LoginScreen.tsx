@@ -197,19 +197,19 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
             {recoveryMessage && <p role="status" className="recovery-status">{recoveryMessage} <a href="/suporte">Abrir suporte</a></p>}
             <button className="button secondary login-submit" disabled={recoveryBusy}>{recoveryBusy ? 'Registrando pedido…' : 'Solicitar recuperação'}</button>
           </form>}
-          {mode === 'signup' && <p className="test-access-note"><strong>Teste grátis por 30 dias.</strong> Não pedimos cartão e não fazemos cobrança automática. No fim, você escolhe se quer assinar.</p>}
+          {mode === 'signup' && <p className="test-access-note"><strong>Homologação com até 30 contas.</strong> Teste grátis por 30 dias, sem cartão e sem cobrança automática. No fim, você escolhe se quer assinar.</p>}
           <div className="login-note"><LockKeyhole size={16}/><p>Para usar PF e MEI separadamente, cada perfil precisa de sua própria conta.</p></div>
           <details id="demo-access" className="demo-access" open={demoOpen} onToggle={event => setDemoOpen(event.currentTarget.open)}>
             <summary>Testar com uma conta de demonstração</summary>
             <div className="test-label"><span/>AMBIENTE DE DEMONSTRAÇÃO</div>
-            <p className="small-text muted">Use dados fictícios para conhecer o Clareia. As contas de demonstração são compartilhadas.</p>
+            <p className="small-text muted">Use dados fictícios para conhecer o Clareia. Alterações ficam apenas nesta sessão e não afetam outros visitantes.</p>
             <form onSubmit={submitDemo}>
               <label>E-mail da demonstração<input type="email" autoComplete="username" readOnly value={demoEmail}/></label>
               <label>Senha<div className="password-field"><input type={showDemoPassword ? 'text' : 'password'} autoComplete="current-password" value={demoPassword} onChange={event => setDemoPassword(event.target.value)} required/><button type="button" aria-label={showDemoPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowDemoPassword(!showDemoPassword)}>{showDemoPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div></label>
               {demoError && <p role="alert" className="login-error">{demoError}</p>}
               <button className="button secondary login-submit" disabled={demoBusy}>{demoBusy ? 'Entrando…' : `Abrir demonstração ${profile === 'mei' ? 'MEI' : 'PF'}`}<ArrowRight size={18}/></button>
             </form>
-            <p className="test-password">A demonstração usa um acesso compartilhado com dados fictícios.</p>
+            <p className="test-password">A demonstração não é uma conta de produção. Alterações são temporárias e os dados são reiniciados ao entrar novamente.</p>
           </details>
         </div>
       </section>

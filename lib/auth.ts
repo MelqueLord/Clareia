@@ -128,6 +128,55 @@ export const auth = betterAuth({
   },
   databaseHooks: {
     user: {
+      create: {
+        before: async (data) => {
+          if (!env.DB) {
+            throw new APIError("INTERNAL_SERVER_ERROR", {
+              message: "Não foi possível verificar as vagas da homologação.",
+            });
+          }
+
+          const configuredLimit = Number(env.PILOT_MAX_ACCOUNTS || 30);
+          const limit = Number.isInteger(configuredLimit) && configuredLimit >= 1 && configuredLimit <= 1000
+            ? configuredLimit
+            : 30;
+          const adminEmail = (env.TRIAL_ADMIN_EMAIL || "").trim().toLowerCase();
+          const email = data.email.trim().toLowerCase();
+
+          if (adminEmail && email === adminEmail) return { data };
+
+          const lockId = "pilot-signup-capacity";
+          const now = new Date().toISOString();
+          const lock = await env.DB.prepare(
+            "INSERT INTO job_locks(id,until_at) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET until_at=excluded.until_at WHERE job_locks.until_at<=? RETURNING id",
+          ).bind(lockId, new Date(Date.now() + 120_000).toISOString(), now).first<{ id: string }>();
+          if (!lock) {
+            throw new APIError("TOO_MANY_REQUESTS", {
+              message: "Estamos confirmando outro cadastro. Aguarde alguns segundos e tente novamente.",
+            });
+          }
+
+          try {
+            const accountCount = await env.DB.prepare(
+              "SELECT COUNT(*) AS total FROM user WHERE lower(email) <> ?",
+            ).bind(adminEmail).first<{ total: number }>();
+
+            if ((accountCount?.total || 0) >= limit) {
+              throw new APIError("FORBIDDEN", {
+                message: `A turma de homologação atingiu o limite de ${limit} contas. Fale com o suporte do Clareia.`,
+              });
+            }
+          } catch (cause) {
+            await env.DB.prepare("DELETE FROM job_locks WHERE id=?").bind(lockId).run();
+            throw cause;
+          }
+
+          return { data };
+        },
+        after: async () => {
+          if (env.DB) await env.DB.prepare("DELETE FROM job_locks WHERE id=?").bind("pilot-signup-capacity").run();
+        },
+      },
       update: {
         before: async (data) => {
           if (Object.hasOwn(data, "space")) {
