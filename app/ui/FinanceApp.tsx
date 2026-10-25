@@ -127,15 +127,23 @@ function BankField({initialBank=''}:{initialBank?:string}){const knownBank=banks
  const [text,setText]=useState('');
  const [answer,setAnswer]=useState('');
  const {listening,message,setMessage,record}=useSpeechCapture(setText);
+ const questionResponse=text.trim()?answerQuestion(text,data,space,asOf):null;
+ const movement=isFinancialMovement(text);
+ const actionLabel=questionResponse?'Ver resposta':movement?'Preparar lançamento':'Ver consultas disponíveis';
+ function submitVoice(){
+  if(questionResponse){setAnswer(questionResponse);return;}
+  if(movement){setAnswer('');try{onParsed(parseVoiceBatch(text,data,space,asOf));}catch(e){setMessage((e as Error).message);}return;}
+  setAnswer(space==='mei'?'Posso consultar seus maiores gastos, comparar com o mês anterior, acompanhar metas para guardar, mostrar alertas e aumentos de gastos, estimar quanto pode gastar ou calcular uma referência para retirada do MEI. Para lançar, diga uma receita ou despesa.':'Posso consultar seus maiores gastos, comparar com o mês anterior, acompanhar metas para guardar, mostrar alertas e aumentos de gastos ou estimar quanto pode gastar. Para lançar, diga uma receita ou despesa.');
+ }
  return <div className="voice-form">
   <div className={'voice-orb '+(listening?'listening':'')}><button type="button" aria-pressed={listening} aria-label={listening?'Parar gravação':'Começar gravação'} onClick={record}>{listening?<Square size={30}/>:<Mic size={34}/>}</button></div>
   <h3>{listening?'Estou ouvindo…':'Conte ou pergunte ao Clareia'}</h3>
-  <p className="small-text muted">Fale como falaria com uma pessoa. O Clareia separa cada receita e despesa para você revisar.</p>
+  <p className="small-text muted">Diga uma pergunta ou conte o que recebeu ou pagou. O botão abaixo mostra a resposta ou prepara o lançamento para você conferir.</p>
   <p className="muted">Exemplo: “Recebi 800 reais hoje, paguei 150 de material e deixei 100 para reserva.”</p>
   <p className="small-text muted">Ao tocar no microfone, você autoriza a transcrição pelo serviço do navegador. O Clareia não guarda o áudio.</p>
   {message&&<div className="notice" role="status">{message}</div>}
   <label className="text-left">O que você disse (pode corrigir)<textarea aria-live="polite" value={text} rows={3} onChange={e=>setText(e.target.value)} placeholder="Ex.: recebi 800 reais de salário hoje…"/></label>
-  <button type="button" className="button primary full-width" disabled={!text.trim()||listening} onClick={()=>{const response=answerQuestion(text,data,space,asOf);if(response){setAnswer(response);return;}setAnswer('');try{onParsed(parseVoiceBatch(text,data,space,asOf));}catch(e){setMessage((e as Error).message);}}}>Revisar o que entendi <ArrowRight size={16}/></button>
+  <button type="button" className="button primary full-width" disabled={!text.trim()||listening} onClick={submitVoice}>{actionLabel} <ArrowRight size={16}/></button>
   {answer&&<div className="voice-answer" role="status"><strong>O que seus registros mostram</strong><p style={{whiteSpace:'pre-line'}}>{answer}</p><small>Consulta por regras verificáveis. Nenhum dado foi alterado.</small></div>}
  </div>;
 }
