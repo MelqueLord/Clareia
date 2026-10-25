@@ -1,4 +1,4 @@
-import type { FinanceData, Kind, Space } from './model';
+import type { FinanceData, Kind, PaymentMethod, Space } from './model';
 import { categoriesFor } from './model';
 
 export type VoiceDraft = {
@@ -14,6 +14,7 @@ export type VoiceDraft = {
   description: string;
   accountId: string;
   cardId: string;
+  paymentMethod?: PaymentMethod;
   installments: number;
   needsReview: true;
   reviewHints: string[];
@@ -206,7 +207,7 @@ function parseOne(text: string, data: FinanceData, currentSpace: Space, asOf: st
   else if (/\b(?:liberei|liberar|retirei|retirar)\b.*\b(?:reserva|investimento|valor separado)\b/.test(source)) type = 'release';
   else if (/\b(?:transferi|transferir|transferencia|retirada do mei)\b/.test(source)) type = 'transfer';
   else if (/\b(?:estorno|reembolso|devolveram|devolucao)\b/.test(source)) type = 'refund';
-  else if (/\b(?:recebi|receber|receita|entrou|caiu|ganhei|salario|faturamento|venda|vendi)\b/.test(source)) type = 'income';
+  else if (/\b(?:recebi|receber|receita|entrou|caiu|ganhei|salario|renda|faturamento|faturei|venda|vendi)\b/.test(source)) type = 'income';
 
   const amount = findAmount(source);
   const paidWords = /\b(?:paguei|pago|paga|recebi|recebido|recebida|entrou|caiu|ganhei|gastei|gasto|comprei|ja foi|ja paguei|ja recebi)\b/.test(source);
@@ -231,6 +232,11 @@ function parseOne(text: string, data: FinanceData, currentSpace: Space, asOf: st
   const spokenInstallments = installmentMatch?.[1] ? Number(installmentMatch[1]) : installmentMatch?.[0] ? wordNumber(installmentMatch[0].replace(/^em\s+|\s+vezes$/g, '')) || 1 : 1;
   const installments = Math.max(1, Math.min(36, spokenInstallments));
   const category = detectCategory(source, currentSpace, type);
+  const paymentMethod: PaymentMethod | undefined = type !== 'expense' ? undefined
+    : /\bpix\b/.test(source) ? 'pix'
+    : /\b(?:debito|cartao de debito)\b/.test(source) ? 'debit'
+    : /\b(?:credito|cartao|cartao de credito)\b/.test(source) ? 'credit_card'
+    : undefined;
   const description = cleanDescription(text, data, currentSpace) || (category !== 'Outros' ? category : type === 'income' ? 'Receita' : type === 'transfer' ? 'Transferência' : type === 'reserve' ? 'Separação para reserva' : type === 'card_debt' ? 'Parcelas de cartão' : type === 'card_payment' ? 'Pagamento de fatura' : type === 'refund' ? 'Reembolso' : 'Despesa');
   const reviewHints: string[] = [];
   if (amount === null) reviewHints.push('Não encontrei o valor. Confira ou preencha o campo de valor.');
@@ -238,15 +244,22 @@ function parseOne(text: string, data: FinanceData, currentSpace: Space, asOf: st
   if (!naturalDate(dateText, asOf)) reviewHints.push('Não foi mencionada uma data; deixei hoje como padrão.');
   if (data.accounts.filter(item => item.space === currentSpace).length > 1 && !account) reviewHints.push('Escolha a conta ou o banco para este lançamento.');
   if (/\b(?:cartao|credito)\b/.test(source) && !card && data.cards.filter(item => item.space === currentSpace).length > 1) reviewHints.push('Escolha qual cartão foi usado.');
+  if (type === 'expense' && !paymentMethod) reviewHints.push('Confirme se pagou no Pix, débito ou crédito.');
 
   return {
     amount, space: currentSpace, type, date, dueDate, dateWasInferred: !naturalDate(dateText, asOf), paid, statusInferred,
-    category, description, accountId: account?.id || '', cardId: card?.id || '', installments, needsReview: true,
+    category, description, accountId: account?.id || '', cardId: card?.id || '', paymentMethod, installments, needsReview: true,
     reviewHints, goalId: ['reserve', 'release'].includes(type) ? goal?.id : undefined,
   };
 }
 
-const movementStart = /(?:eu\s+)?(?:recebi|receber|ganhei|entrou|caiu|salario|vendi|venda|paguei|pagar|gastei|gastar|comprei|comprar|transferi|transferir|separei|separar|reservei|reservar|liberei|liberar|retirei|retirar|estorno|reembolso|fatura|parcela)\b/i;
+const movementStart = /(?:eu\s+)?(?:recebi|receber|ganhei|entrou|caiu|salario|renda|faturamento|faturei|vendi|venda|paguei|pagar|gastei|gastar|comprei|comprar|transferi|transferir|separei|separar|reservei|reservar|liberei|liberar|retirei|retirar|estorno|reembolso|fatura|parcela)\b/i;
+
+export function isFinancialMovement(text: string): boolean {
+  const source = normalize(text).replace(/\s+/g, ' ').trim();
+  if (!source || source.endsWith('?') || /^(?:onde|quanto|qual|quais|como|quando|por que|porque|compare|me mostre|me diga|o que)\b/.test(source)) return false;
+  return movementStart.test(source);
+}
 
 export function parseVoice(text: string, data: FinanceData, currentSpace: Space, asOf: string): VoiceDraft {
   return parseOne(text, data, currentSpace, asOf);

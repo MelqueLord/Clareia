@@ -41,7 +41,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const [type, setType] = useState<Kind>(tx?.type || voice?.type || initialType || 'expense');
   const selectedSpace: Space = tx?.space || voice?.space || space;
   const isGoalContribution = initialType === 'reserve' && !!initialGoalId && !tx && !voice;
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>(tx?.cardId || voice?.cardId || initialCardId || cardPurchaseMode ? 'credit_card' : tx?.paymentMethod || '');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>(tx?.paymentMethod || (tx?.cardId ? 'credit_card' : '') || voice?.paymentMethod || (voice?.cardId ? 'credit_card' : '') || (initialCardId || cardPurchaseMode ? 'credit_card' : ''));
   const [manualCardName, setManualCardName] = useState('');
   const [manualCardClosingDay, setManualCardClosingDay] = useState(23);
   const [manualCardDueDay, setManualCardDueDay] = useState(1);
