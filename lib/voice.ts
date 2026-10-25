@@ -177,7 +177,7 @@ function cleanDescription(raw: string, data: FinanceData, space: Space): string 
     'gastei', 'gastar', 'comprei', 'comprar', 'custou', 'custa', 'deu', 'separei', 'separar', 'reservei', 'reservar', 'liberei', 'liberar',
     'transferi', 'transferir', 'transferencia', 'fatura', 'cartao', 'credito', 'debito', 'pix', 'dinheiro', 'vezes', 'parcela', 'parcelas',
     'pendente', 'vencimento', 'vence', 'vencera', 'vou', 'ainda', 'ja', 'pago', 'paga', 'pague', 'recebido', 'recebida', 'receber',
-    'r$', 'mais', 'tambem', 'depois', 'no', 'na',
+    'r$', 'r', 'mais', 'tambem', 'depois', 'no', 'na',
   ]);
   const accountWords = data.accounts.filter(account => account.space === space).flatMap(account => [account.name, account.bank]);
   const cardWords = data.cards.filter(card => card.space === space).map(card => card.name);
