@@ -97,7 +97,7 @@ export default function GuidedIntelligence({
     {setupActive && <div className="guided-first-run-badge"><Sparkles size={15}/> {firstRun ? 'COMECE AQUI' : 'PASSO A PASSO'} <span>{firstRun ? '4 etapas simples' : 'Continue na ordem indicada'}</span></div>}
     <div className="guided-heading">
       <span className="guided-icon"><Sparkles size={20}/></span>
-      <div><span className="eyebrow">CENTRAL DE INTELIGÊNCIA · SEU PRÓXIMO PASSO</span><h2>{status.ready ? 'Sua base inicial está pronta.' : 'Vamos preparar suas finanças juntos.'}</h2><p>{status.ready ? 'Receitas, saldo e despesas já dão ao Clareia uma base para começar a analisar seus dados.' : firstRun ? 'Eu vou orientar cada passo. Comece informando sua renda mensal.' : 'Siga a ordem sugerida ou toque em uma etapa para abrir a tela. Você pode digitar ou ditar a informação.'}</p></div>
+      <div><span className="eyebrow">SEU ASSISTENTE FINANCEIRO · CENTRAL DE INTELIGÊNCIA</span><h2>{status.ready ? 'Sua base inicial está pronta.' : 'Vamos preparar suas finanças juntos.'}</h2><p>{status.ready ? 'Receitas, saldo e despesas já dão ao seu assistente uma base para acompanhar o mês e orientar os próximos passos.' : firstRun ? 'Sou seu assistente financeiro. Vou simplificar o começo e guiar uma etapa por vez. Primeiro, me conte sua renda mensal.' : 'Siga a ordem indicada. Eu abro a tela certa e explico o que informar. Você pode digitar ou ditar.'}</p></div>
     </div>
     <div className="guided-progress-row"><div className="guided-progress"><span style={{ width: `${status.percent}%` }}/></div><strong>{status.ready ? '4 de 4 etapas' : `Etapa ${step + 1} de 4`}</strong></div>
     <div className="guided-checklist" aria-label="Etapas para organizar suas finanças">
@@ -121,7 +121,7 @@ export default function GuidedIntelligence({
       {message && step !== 0 && <p className="guided-message" role="status">{message}</p>}
     </div>}
 
-    {status.ready && <div className="guided-ready"><CheckCircle2 size={22}/><div><strong>O Clareia já pode analisar sua base inicial.</strong><p>Continue registrando movimentos para refinar as projeções. Depois, complete os dados pessoais ou do MEI e defina metas mensais de gastos para receber orientações mais precisas.</p></div><button className="button primary" onClick={onGoHome}>Abrir visão geral <ArrowRight size={16}/></button></div>}
+    {status.ready && <div className="guided-ready"><CheckCircle2 size={22}/><div><strong>Seu assistente já pode acompanhar suas finanças.</strong><p>Continue registrando movimentos para atualizar as projeções. As orientações ficam mais úteis conforme você completa os dados pessoais ou do MEI e define suas metas mensais.</p></div><button className="button primary" onClick={onGoHome}>Abrir visão geral <ArrowRight size={16}/></button></div>}
     {status.ready && <div className="guided-later">
       <div><span className="eyebrow">DEPOIS DA BASE INICIAL</span><h3>Deixe as orientações mais precisas</h3><p>Revise estes ajustes complementares no seu tempo.</p></div>
       <button type="button" className={`guided-later-link ${monthlyGoalsReviewed ? 'done' : ''}`} onClick={() => onNavigate('monthlyGoals')}><span className="guided-later-status">{monthlyGoalsReviewed ? <Check size={14}/> : '5'}</span><span><strong>Definir metas mensais de gastos</strong><small>{monthlyGoalsReviewed ? 'Revisadas · Planejamento' : 'Planejamento · uma meta mensal por categoria'}</small></span><ArrowRight size={15}/></button>

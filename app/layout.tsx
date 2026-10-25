@@ -8,8 +8,8 @@ import "./privacy.css";
 import "./support.css";
 
 export const metadata: Metadata = {
-  title: "Clareia · Organize suas finanças por áudio e com inteligência",
-  description: "Fale suas receitas e despesas, acompanhe seus gastos e receba orientação financeira para sua vida pessoal ou seu MEI.",
+  title: "Clareia · Seu assistente financeiro inteligente",
+  description: "Registre receitas e despesas por áudio ou texto, acompanhe seu mês e receba orientações com base nos dados da sua vida pessoal ou do MEI.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Clareia" },
   icons: {
