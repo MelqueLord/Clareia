@@ -61,6 +61,22 @@ function SaveBankChoice({ name, value, onChange }: { name: string; value: 'yes'|
   </fieldset>;
 }
 
+function InstallmentProjection({ amount, installments, firstDue, remaining = false }: { amount: number; installments: number; firstDue: string; remaining?: boolean }) {
+  if (amount <= 0 || !firstDue) return <div className="installment-projection empty"><strong>Projeção das parcelas</strong><small>Informe o valor total, o vencimento e a quantidade para ver cada parcela antes de salvar.</small></div>;
+  const count = Math.max(1, Math.min(36, installments));
+  const baseAmount = Math.floor(amount / count);
+  const extraCents = amount % count;
+  return <section className="installment-projection" aria-label="Projeção das parcelas">
+    <header><strong>{remaining ? 'Parcelas que ainda faltam' : 'Projeção das parcelas'}</strong><small>{money(amount)} no total · {count}x</small></header>
+    <ol className="installment-projection-list">{Array.from({length:count},(_,index)=>{
+      const installmentAmount=baseAmount+(index<extraCents?1:0);
+      const installmentDate=addMonths(firstDue,index);
+      return <li key={index}><span>Parcela {index+1} de {count}</span><time dateTime={installmentDate}>{new Date(installmentDate+'T12:00:00').toLocaleDateString('pt-BR')}</time><strong>{money(installmentAmount)}</strong></li>;
+    })}</ol>
+    <small className="installment-projection-total">A distribuição soma exatamente {money(amount)}.</small>
+  </section>;
+}
+
 export default function TransactionForm({ data, space, asOf, tx, voice, initialType, initialGoalId, initialAmount, cardPurchaseMode = false, initialCardId = '', saving, submitLabel, onSave, onNeedAccount }: {
   data: FinanceData;
   space: Space;
@@ -309,7 +325,6 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
         <details className="card-category-option"><summary>Ajustar fechamento e vencimento do cartão</summary><div className="form-grid"><label>Fecha no dia<input type="number" min="1" max="28" value={manualCardClosingDay} onChange={event => { const value = Math.max(1, Math.min(28, Number(event.target.value) || 1)); setManualCardClosingDay(value); setDue(manualCardDue(date, value, manualCardDueDay)); }}/></label><label>Vence no dia<input type="number" min="1" max="28" value={manualCardDueDay} onChange={event => { const value = Math.max(1, Math.min(28, Number(event.target.value) || 1)); setManualCardDueDay(value); setDue(manualCardDue(date, manualCardClosingDay, value)); }}/></label></div></details>
       </>}
       <div className="form-grid card-entry-grid"><label>Vencimento da 1ª parcela<input required type="date" value={due} onChange={event => setDue(event.target.value)}/></label><label>Parcelas<input name="installments" type="number" min="1" max="36" value={installments} onChange={event => setInstallments(Math.max(1, Math.min(36, Number(event.target.value) || 1)))}/></label></div>
-      {cardId && (cardId !== '__other__' || manualCardName.trim()) && <div className="card-entry-summary"><strong>{installments} parcela{installments === 1 ? '' : 's'} de aproximadamente {money(Math.ceil(cents(amountText || '0') / installments))}</strong><span>Primeira fatura: {displayDate(due)} · última: {displayDate(lastInstallmentDue)}</span></div>}
       <details className="card-category-option"><summary>Categoria sugerida: {category} · alterar</summary><label>Categoria<select name="category" value={category} onChange={event => chooseCategory(event.target.value)}>{categoriesFor(selectedSpace, 'expense').map(item => <option key={item}>{item}</option>)}</select></label></details>
     </section> : type === 'card_debt' && !tx && !voice ? <section className="card-entry-form">
       <p className="card-entry-kicker">Parcelas que já existem · {selectedSpace === 'mei' ? 'Meu MEI' : 'Pessoal'}</p>
@@ -318,7 +333,6 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       <label>Total que ainda falta pagar (R$)<MoneyInput required name="amount" value={amountText} onChange={changeAmount} placeholder="0,00"/></label>
       <div className="form-grid card-entry-grid"><label>Cartão de crédito<select required value={cardId} onChange={event => { setCardId(event.target.value); }}><option value="">Selecione o cartão</option>{availableCards.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Parcelas que faltam<input name="installments" type="number" min="1" max="36" value={installments} onChange={event => setInstallments(Math.max(1, Math.min(36, Number(event.target.value) || 1)))}/></label></div>
       <label>Vencimento da próxima parcela<input required type="date" value={due} onChange={event => setDue(event.target.value)}/></label>
-      {cardId && due && <div className="card-entry-summary"><strong>{installments} parcela{installments === 1 ? '' : 's'} restante{installments === 1 ? '' : 's'}</strong><span>Próxima: {displayDate(due)} · termina: {displayDate(lastInstallmentDue)}</span></div>}
       {!availableCards.length && <div className="notice card-debt-note">Cadastre o cartão para continuar.<button type="button" className="text-link" onClick={onNeedAccount}>Cadastrar cartão <ArrowRight size={14}/></button></div>}
       <details className="card-category-option"><summary>Categoria sugerida: {category} · alterar</summary><label>Categoria<select name="category" value={category} onChange={event => chooseCategory(event.target.value)}>{categoriesFor(selectedSpace, 'expense').map(item => <option key={item}>{item}</option>)}</select></label></details>
     </section> : <>
@@ -353,7 +367,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       {type === 'expense' && !cardPurchaseMode && paymentMethod === 'credit_card' && <div className="expense-payment-details">
         <CreditCardPicker cards={availableCards} cardId={cardId} search={cardSearch} manualCardName={manualCardName} savedBanks={savedCardBanks} onSearch={setCardSearch} onChange={chooseCard}/>
         {isManualCard && <><label>Banco ou nome do cartão<input required maxLength={80} value={manualCardName} onChange={event => setManualCardName(event.target.value)} onBlur={() => setManualCardName(normalizeBankName(manualCardName))} placeholder="Ex.: Nubank, Itaú ou cartão da loja"/></label>{manualBankMode && manualCardName.trim() && <SaveBankChoice name={manualCardName} value={rememberBankChoice} onChange={setRememberBankChoice}/>}<details className="card-category-option"><summary>Ajustar fechamento do cartão (opcional)</summary><div className="form-grid"><label>Fecha no dia<input type="number" min="1" max="28" value={manualCardClosingDay} onChange={event => { const value = Math.max(1, Math.min(28, Number(event.target.value) || 1)); setManualCardClosingDay(value); setDue(manualCardDue(date, value, manualCardDueDay)); }}/></label><label>Vence no dia<input type="number" min="1" max="28" value={manualCardDueDay} onChange={event => { const value = Math.max(1, Math.min(28, Number(event.target.value) || 1)); setManualCardDueDay(value); setDue(manualCardDue(date, manualCardClosingDay, value)); }}/></label></div></details></>}
-        {(card || isManualCard && manualCardName.trim()) && <><label>Vencimento da 1ª parcela<input required type="date" value={due} onChange={event => setDue(event.target.value)}/></label><label>Parcelas<input name="installments" type="number" min="1" max="36" value={installments} onChange={event => setInstallments(Math.max(1, Math.min(36, Number(event.target.value) || 1)))}/></label><div className="card-entry-summary"><strong>{installments} parcela{installments === 1 ? '' : 's'} de aproximadamente {money(Math.ceil(cents(amountText || '0') / installments))}</strong><span>Primeira: {displayDate(due)} · última: {displayDate(lastInstallmentDue)}</span></div></>}
+        {(card || isManualCard && manualCardName.trim()) && <><label>Vencimento da 1ª parcela<input required type="date" value={due} onChange={event => setDue(event.target.value)}/></label><label>Parcelas<input name="installments" type="number" min="1" max="36" value={installments} onChange={event => setInstallments(Math.max(1, Math.min(36, Number(event.target.value) || 1)))}/></label></>}
       </div>}
       {type === 'expense' && !cardPurchaseMode && (paymentMethod === 'debit' || paymentMethod === 'pix') && <>{incomeAccounts.length > 1 ? <label className="quick-account-select">Conta de saída<select required value={accountId} onChange={event => setAccountId(event.target.value)}><option value="">Selecione o banco e a conta</option>{incomeAccounts.map(account => <option key={account.id} value={account.id}>{account.bank} · {account.name}</option>)}</select></label> : incomeAccounts.length === 1 ? <p className="quick-account-note">Valor sai de {incomeAccounts[0].bank} · {incomeAccounts[0].name}</p> : <div className="notice income-account-notice">Cadastre uma conta bancária para continuar.<button type="button" className="text-link" onClick={onNeedAccount}>Cadastrar conta <ArrowRight size={14}/></button></div>}</>}
       {type === 'income' && incomeAccounts.length > 1 && !isSpecialType && !cardPurchaseMode && <label className="quick-account-select">Em qual banco entrou?<select required value={accountId} onChange={event => setAccountId(event.target.value)}><option value="">Escolha uma conta</option>{incomeAccounts.map(account => <option key={account.id} value={account.id}>{account.bank} · {account.name}</option>)}</select></label>}
@@ -394,6 +408,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     {(type === 'reserve' || type === 'release') && <label>Tipo de investimento <span className="muted">(opcional)</span><select value={investmentTypeChoice} onChange={event => { setInvestmentTypeChoice(event.target.value); if (event.target.value !== 'Outro') setCustomInvestmentType(''); }}><option value="">Sem tipo informado</option>{investmentTypes.map(item => <option key={item}>{item}</option>)}<option value="Outro">Outro</option></select>{investmentTypeChoice === 'Outro' && <input aria-label="Qual tipo de investimento" value={customInvestmentType} onChange={event => setCustomInvestmentType(event.target.value)} maxLength={80} placeholder="Escreva o tipo"/>}</label>}
     </section>}
     </>}
+    {(isCreditExpense && (cardId !== '__other__' && !!cardId || !!manualCardName.trim()) || type === 'card_debt' && !!cardId) && <InstallmentProjection amount={cents(amountText || '0')} installments={installments} firstDue={due} remaining={type === 'card_debt'}/>}
     {!showAdvanced && !isSpecialType && <input type="hidden" name="category" value={category}/>}
     {message && <p className="negative" role="alert">{message}</p>}
     <button className="button primary full-width quick-submit" disabled={saving || isGoalContribution && !incomeAccounts.length}>{saving ? 'Salvando…' : submitLabel || (isGoalContribution ? 'Registrar valor guardado' : type === 'card_debt' ? 'Salvar parcelas restantes' : voice ? 'Conferi, salvar lançamento' : 'Salvar lançamento')} <ArrowRight size={15}/></button>
