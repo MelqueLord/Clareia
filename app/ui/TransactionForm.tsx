@@ -52,6 +52,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const [showAdvanced, setShowAdvanced] = useState(!!initialCardId || !!tx || (!!voice && !['expense', 'income'].includes(voice.type)) || (!!initialType && !['expense', 'income'].includes(initialType)));
   const [description, setDescription] = useState(tx?.description || voice?.description || (isGoalContribution ? `Aporte mensal · ${initialGoal?.name || 'Meta'}` : ''));
   const [category, setCategory] = useState(tx?.category || voice?.category || ((voice?.type || initialType) === 'income' ? firstIncomeCategory : 'Outros'));
+  const isVariableExtra = type === 'income' && selectedSpace === 'pf' && category === 'Renda extra';
   const [categoryTouched, setCategoryTouched] = useState(!!tx || !!voice);
   const [goalId, setGoalId] = useState(tx?.goalId || voice?.goalId || initialGoalId || '');
   const [cardId, setCardId] = useState(tx?.cardId || voice?.cardId || initialCardId || '');
@@ -142,7 +143,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
     setCardId('');
     setInstallments(1);
     const options = categoriesFor(selectedSpace, nextType === 'income' ? 'income' : 'expense');
-    const nextCategory = options.includes(category) ? category : options[0] || 'Outros';
+    const nextCategory = nextType === 'income' && selectedSpace === 'pf' && category === 'Outros' ? 'Salário' : options.includes(category) ? category : options[0] || 'Outros';
     setCategory(nextCategory);
     if (nextType === 'income') {
       const plan = (data.investmentPlans || []).find(item => item.space === selectedSpace && item.incomeCategory === nextCategory);
@@ -197,7 +198,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       cardId: isManualCard ? '' : cardId,
       space: selectedSpace,
       installments: isCreditExpense ? Number(form.get('installments')) || 1 : cardId && type !== 'card_payment' ? Number(form.get('installments')) || 1 : 1,
-      recurring: type !== 'card_debt' && !isCreditExpense && !cardId && form.get('recurring') === 'on',
+      recurring: type !== 'card_debt' && !isVariableExtra && !isCreditExpense && !cardId && form.get('recurring') === 'on',
       paymentMethod: type === 'expense' ? paymentMethod || undefined : undefined,
       recurrenceEndDate: form.get('recurring') === 'on' ? tx?.recurrenceEndDate : undefined,
       source: voice ? 'voice' : tx?.source || 'manual',
@@ -262,9 +263,11 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
         <button type="button" className={type === 'expense' ? 'selected' : ''} aria-pressed={type === 'expense'} onClick={() => chooseType('expense')}>Despesa</button>
         <button type="button" className={type === 'income' ? 'selected' : ''} aria-pressed={type === 'income'} onClick={() => chooseType('income')}>Receita</button>
       </div>
+      {type === 'income' && selectedSpace === 'pf' && !isSpecialType && ['Salário','Renda extra'].includes(category) && <><div className="quick-type-switch" aria-label="Tipo de renda recebida"><button type="button" className={category === 'Salário' ? 'selected' : ''} aria-pressed={category === 'Salário'} onClick={() => chooseCategory('Salário')}>Salário-base</button><button type="button" className={category === 'Renda extra' ? 'selected' : ''} aria-pressed={category === 'Renda extra'} onClick={() => chooseCategory('Renda extra')}>Extra do mês</button></div><p className="quick-entry-help">{category === 'Renda extra' ? 'Registre aqui horas extras, comissão, bônus ou outro adicional. Ele vale só para este lançamento.' : 'Use para seu salário principal. Benefícios e outras rendas podem ser escolhidos em Mais opções.'}</p></>}
       {isSpecialType && <div className="notice quick-special-note">Este lançamento tem campos próprios. Complete os detalhes abaixo.</div>}
-      <label>{type === 'card_debt' || cardPurchaseMode ? 'O que foi comprado?' : type === 'income' && selectedSpace === 'pf' ? 'Salário ou outra renda' : selectedSpace === 'mei' && type === 'income' ? 'Cliente, serviço ou venda' : selectedSpace === 'mei' ? 'Fornecedor, custo ou DAS' : 'O que foi?'}<input required name="description" value={description} onChange={event => setDescription(event.target.value)} onBlur={inferCategory} placeholder={type === 'card_debt' || cardPurchaseMode ? 'Ex.: celular, geladeira' : type === 'income' && selectedSpace === 'pf' ? 'Ex.: salário, aluguel' : selectedSpace === 'mei' ? 'Ex.: venda, insumos, DAS' : 'Ex.: mercado, aluguel'} maxLength={180}/></label>
-      {category !== 'Outros' && !isSpecialType && <small className="quick-category-hint">Categoria: {category}</small>}
+      <label>{type === 'card_debt' || cardPurchaseMode ? 'O que foi comprado?' : isVariableExtra ? 'De onde veio o extra?' : type === 'income' && selectedSpace === 'pf' ? 'Salário ou outra renda' : selectedSpace === 'mei' && type === 'income' ? 'Cliente, serviço ou venda' : selectedSpace === 'mei' ? 'Fornecedor, custo ou DAS' : 'O que foi?'}<input required name="description" value={description} onChange={event => setDescription(event.target.value)} onBlur={inferCategory} placeholder={type === 'card_debt' || cardPurchaseMode ? 'Ex.: celular, geladeira' : isVariableExtra ? 'Ex.: horas extras, comissão, bônus' : type === 'income' && selectedSpace === 'pf' ? 'Ex.: salário, aluguel' : selectedSpace === 'mei' ? 'Ex.: venda, insumos, DAS' : 'Ex.: mercado, aluguel'} maxLength={180}/></label>
+      {isVariableExtra && <p className="small-text muted">Este valor fica registrado só neste mês. Não será repetido automaticamente.</p>}
+      {category !== 'Outros' && !isSpecialType && !(type === 'income' && selectedSpace === 'pf' && ['Salário','Renda extra'].includes(category)) && <small className="quick-category-hint">Categoria: {category}</small>}
       <label>{type === 'card_debt' ? 'Total que ainda falta pagar (R$)' : isCreditExpense ? 'Valor total da compra (R$)' : 'Valor (R$)'}<MoneyInput required name="amount" value={amountText} onChange={changeAmount} placeholder="0,00"/></label>
       {!isSpecialType && !tx && !voice && <label>{isCreditExpense ? 'Data da compra' : type === 'income' ? paid ? 'Data em que recebeu' : 'Data prevista para receber' : paid ? 'Data em que pagou' : 'Data prevista para pagar'}<input required type="date" value={date} onChange={event => { const value = event.target.value; setDate(value); const selectedCard = availableCards.find(item => item.id === cardId); setDue(selectedCard ? firstCardDue(value, selectedCard) : isManualCard ? manualCardDue(value, manualCardClosingDay, manualCardDueDay) : value); }}/></label>}
       {type === 'expense' && !cardPurchaseMode && <label className="payment-method-select">Forma de pagamento<select required value={paymentMethod} onChange={event => choosePaymentMethod(event.target.value as PaymentMethod | '')}><option value="">Escolha como pagou</option><option value="credit_card">Cartão de crédito</option><option value="debit">Débito</option><option value="pix">Pix</option></select></label>}
@@ -302,7 +305,7 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
       {(!cardId || type === 'card_payment') && type !== 'card_debt' && <>
       {['reserve', 'release'].includes(type) ? <label className="checkbox"><input type="checkbox" checked={paid} onChange={event => setPaid(event.target.checked)}/>Confirmo esta alteração no valor separado</label> : isSpecialType && <fieldset className="settlement-choice"><legend>{type === 'income' ? 'Situação da receita' : type === 'transfer' ? 'Situação da transferência' : 'Situação do pagamento'}</legend><div><label className={paid ? 'selected' : ''}><input type="radio" name="paidStatus" checked={paid} onChange={() => { setPaid(true); setEstimated(false); }}/><span>Já {type === 'income' || type === 'refund' ? 'recebi' : type === 'transfer' ? 'transferi' : 'paguei'}</span></label><label className={!paid ? 'selected' : ''}><input type="radio" name="paidStatus" checked={!paid} onChange={() => setPaid(false)}/><span>Ainda vou {type === 'income' || type === 'refund' ? 'receber' : type === 'transfer' ? 'transferir' : 'pagar'}</span></label></div></fieldset>}
       {type === 'income' && !paid && <label className="checkbox"><input type="checkbox" checked={estimated} onChange={event => setEstimated(event.target.checked)}/>Receita apenas estimada (fora do saldo projetado)</label>}
-      {!['transfer', 'card_payment', 'card_debt', 'reserve', 'release'].includes(type) && <label className="checkbox"><input type="checkbox" name="recurring" defaultChecked={tx?.recurring}/>Repetir mensalmente na projeção</label>}
+      {!['transfer', 'card_payment', 'card_debt', 'reserve', 'release'].includes(type) && !isVariableExtra && <label className="checkbox"><input type="checkbox" name="recurring" defaultChecked={tx?.recurring}/>Repetir mensalmente na projeção</label>}
     </>}
     {type === 'income' && <section className="investment-entry">
       <label className="checkbox"><input type="checkbox" checked={investmentEnabled} onChange={event => { setInvestmentEnabled(event.target.checked); if (event.target.checked && !investmentAmount && investmentPlan) setInvestmentAmount(String(suggestedInvestment(investmentPlan, amountText) / 100)); }}/>Separar parte desta receita para investimento</label>

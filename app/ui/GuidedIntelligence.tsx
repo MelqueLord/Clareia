@@ -52,9 +52,11 @@ export default function GuidedIntelligence({
   const floorReviewed = preference.floor !== null && preference.complete && !!preference.checkedOn;
   const initialSource = space === 'pf' ? data.profiles.pf.incomeSource : data.profiles.mei.activity;
   const initialAmount = space === 'pf' ? data.profiles.pf.monthlyIncomeTarget : data.profiles.mei.monthlyRevenueTarget;
+  const initialIncomePattern = data.profiles.pf.incomePattern || 'fixed';
   const [note, setNote] = useState('');
   const [source, setSource] = useState(initialSource);
   const [amount, setAmount] = useState(initialAmount === null ? '' : String(initialAmount / 100));
+  const [incomePattern, setIncomePattern] = useState<'fixed'|'fixed_plus_variable'|'variable'>(initialIncomePattern);
   const { listening, message, setMessage, record } = useSpeechCapture(setNote);
 
   function applySentence() {
@@ -66,7 +68,8 @@ export default function GuidedIntelligence({
     setSource(clean.slice(0, space === 'pf' ? 80 : 120));
     const parsed = valueFromText(clean);
     if (parsed !== null) setAmount(String(parsed / 100));
-    setMessage(parsed === null ? 'A origem foi preenchida. Informe o valor mensal esperado no campo abaixo.' : 'Confira a origem e o valor que foram preenchidos antes de salvar.');
+    if (space === 'pf' && /horas?\s*extras?|comiss[aã]o|b[oô]nus|gratifica[cç][aã]o|renda\s+vari[aá]vel|renda\s+varia/i.test(clean)) setIncomePattern('fixed_plus_variable');
+    setMessage(parsed === null ? 'A origem foi preenchida. Informe o valor mensal de referência no campo abaixo.' : 'Confira a origem, o tipo de renda e o valor antes de salvar.');
   }
 
   async function saveIncomeProfile(event: FormEvent<HTMLFormElement>) {
@@ -82,9 +85,9 @@ export default function GuidedIntelligence({
       return;
     }
     const next = space === 'pf'
-      ? { ...data, profiles: { ...data.profiles, pf: { ...data.profiles.pf, incomeSource: description, monthlyIncomeTarget: target } } }
+      ? { ...data, profiles: { ...data.profiles, pf: { ...data.profiles.pf, incomeSource: description, monthlyIncomeTarget: target, incomePattern } } }
       : { ...data, profiles: { ...data.profiles, mei: { ...data.profiles.mei, activity: description, monthlyRevenueTarget: target } } };
-    if (await onSave(next, 'settings')) setMessage('Receita de referência salva. Agora vamos cadastrar a conta ou o caixa.');
+    if (await onSave(next, 'settings')) setMessage(space === 'pf' && incomePattern === 'fixed_plus_variable' ? 'Salário-base salvo. Registre horas extras e outros adicionais como “Extra do mês” somente quando receber.' : 'Referência de renda salva. Agora vamos cadastrar a conta ou o caixa.');
   }
 
   const steps = space === 'pf'
@@ -107,10 +110,13 @@ export default function GuidedIntelligence({
     {!status.ready && <div className="guided-current-step">
       <div className="guided-step-title">{space === 'mei' ? <Building2 size={18}/> : <Wallet size={18}/>}<div><span className="eyebrow">PRÓXIMO DADO</span><h3>{currentTitle}</h3></div></div>
       {step === 0 && <form onSubmit={saveIncomeProfile}>
-        <p className="muted">{firstRun ? 'Informe de onde vem o dinheiro e quanto recebe por mês. Pode escrever ou ditar.' : space === 'pf' ? 'Conte de onde vem sua renda e quanto espera receber por mês. Se sua renda ainda não começou, informe 0.' : 'Conte o que o MEI vende ou presta e quanto espera faturar por mês. Se ainda não faturou, informe 0.'}</p>
+        <p className="muted">{firstRun ? 'Informe de onde vem o dinheiro e seu valor mensal de referência. Pode escrever ou ditar.' : space === 'pf' ? 'Conte de onde vem sua renda e informe o valor mensal de referência. Se ainda não recebe, informe 0.' : 'Conte o que o MEI vende ou presta e quanto espera faturar por mês. Se ainda não faturou, informe 0.'}</p>
         <label className="guided-note-label">Escreva ou dite em uma frase<textarea value={note} rows={2} onChange={event => setNote(event.target.value)} placeholder={space === 'pf' ? 'Ex.: Recebo R$ 3.500 por mês de salário' : 'Ex.: Faço bolos e faturo cerca de R$ 4.000 por mês'}/></label>
         <div className="guided-note-actions"><button type="button" className={`button secondary ${listening ? 'listening-button' : ''}`} onClick={record}>{listening ? <Square size={16}/> : <Mic size={16}/>} {listening ? 'Parar de ouvir' : 'Ditar'}</button><button type="button" className="text-link" disabled={!note.trim()} onClick={applySentence}>Preencher os campos <ArrowRight size={14}/></button></div>
-        <div className="form-grid guided-fields"><label>{space === 'pf' ? 'Principal fonte de renda' : 'Atividade que gera faturamento'}<input value={source} onChange={event => setSource(event.target.value)} maxLength={space === 'pf' ? 80 : 120} required placeholder={space === 'pf' ? 'Salário, autônomo, benefício…' : 'Serviços, vendas, alimentação…'}/></label><label>{space === 'pf' ? 'Renda mensal esperada (R$)' : 'Faturamento mensal esperado (R$)'}<MoneyInput value={amount} onChange={setAmount} required placeholder="0,00"/></label></div>
+        {space === 'pf' && <label>Como sua renda funciona?<select value={incomePattern} onChange={event => setIncomePattern(event.target.value as typeof incomePattern)}><option value="fixed">Tenho um salário ou valor fixo</option><option value="fixed_plus_variable">Tenho uma base fixa e alguns meses recebo extras</option><option value="variable">Minha renda varia de um mês para outro</option></select></label>}
+        <div className="form-grid guided-fields"><label>{space === 'pf' ? 'Principal fonte de renda' : 'Atividade que gera faturamento'}<input value={source} onChange={event => setSource(event.target.value)} maxLength={space === 'pf' ? 80 : 120} required placeholder={space === 'pf' ? 'Salário, autônomo, benefício…' : 'Serviços, vendas, alimentação…'}/></label><label>{space === 'pf' ? incomePattern === 'fixed_plus_variable' ? 'Salário-base mensal (R$)' : incomePattern === 'variable' ? 'Média mensal de referência (R$)' : 'Renda mensal esperada (R$)' : 'Faturamento mensal esperado (R$)'}<MoneyInput value={amount} onChange={setAmount} required placeholder="0,00"/></label></div>
+        {space === 'pf' && incomePattern === 'fixed_plus_variable' && <p className="small-text muted">Informe só o salário-base aqui. Horas extras, comissão, bônus e adicionais serão lançados à parte, no mês em que entrarem.</p>}
+        {space === 'pf' && incomePattern === 'variable' && <p className="small-text muted">Use uma média aproximada como referência. Lance cada recebimento pelo valor real quando entrar.</p>}
         <p className="small-text muted">A transcrição pode usar o serviço de voz do navegador. O áudio não é armazenado; revise os campos antes de salvar.</p>
         {message && <p className="guided-message" role="status">{message}</p>}
         <button className="button primary" disabled={saving || listening}>{saving ? 'Salvando…' : 'Salvar e continuar'} <ArrowRight size={16}/></button>

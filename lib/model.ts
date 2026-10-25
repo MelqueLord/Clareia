@@ -8,7 +8,7 @@ export type Budget = { id:string; space:Space; category:string; limit:number };
 export type SavingsGoal = { id:string; space:Space; name:string; target:number; targetDate:string };
 export type InvestmentPlan = { id:string; space:Space; incomeCategory:string; mode:'fixed'|'percent'; value:number; investmentType:string };
 export type Preferences = { floor:number|null; complete:boolean; checkedOn:string; monthlyGoalsReviewed?:boolean; essentials?:{category:string;monthly:number}[]; essentialsReviewed?:boolean; closedYears?:number[] };
-export type PersonalProfile = { incomeSource:string; monthlyIncomeTarget:number|null; dependents:number };
+export type PersonalProfile = { incomeSource:string; monthlyIncomeTarget:number|null; dependents:number; incomePattern?:'fixed'|'fixed_plus_variable'|'variable' };
 export type BusinessProfile = { tradeName:string; cnpj:string; activity:string; city:string; monthlyRevenueTarget:number|null; monthlyDas:number|null; dasDueDay:number|null; proLabore:number|null };
 export type FinanceData = { configured:boolean; accounts:Account[]; cards:Card[]; transactions:Transaction[]; budgets:Budget[]; savingsGoals?:SavingsGoal[]; investmentPlans?:InvestmentPlan[]; preferences:Record<Space,Preferences>; profiles:{pf:PersonalProfile;mei:BusinessProfile}; dismissed:string[] };
 export const personalIncomeCategories = ['Salário','Benefícios','Renda extra','Rendimentos','Outros'];
@@ -18,7 +18,7 @@ export const businessExpenseCategories = ['Materiais e insumos','Fornecedores','
 export const categories = [...new Set([...personalIncomeCategories,...personalExpenseCategories,...businessIncomeCategories,...businessExpenseCategories])];
 export function categoriesFor(space:Space,kind:'income'|'expense'|'all'='all'):string[]{const list=space==='mei'?[...businessIncomeCategories,...businessExpenseCategories]:[...personalIncomeCategories,...personalExpenseCategories];return kind==='all'?list:space==='mei'?(kind==='income'?businessIncomeCategories:businessExpenseCategories):(kind==='income'?personalIncomeCategories:personalExpenseCategories);}
 export const id = () => crypto.randomUUID();
-export function emptyData(): FinanceData { return {configured:false,accounts:[],cards:[],transactions:[],budgets:[],savingsGoals:[],investmentPlans:[],preferences:{pf:{floor:null,complete:false,checkedOn:'',monthlyGoalsReviewed:false,closedYears:[]},mei:{floor:null,complete:false,checkedOn:'',monthlyGoalsReviewed:false,closedYears:[]}},profiles:{pf:{incomeSource:'',monthlyIncomeTarget:null,dependents:0},mei:{tradeName:'',cnpj:'',activity:'',city:'',monthlyRevenueTarget:null,monthlyDas:null,dasDueDay:null,proLabore:null}},dismissed:[]}; }
+export function emptyData(): FinanceData { return {configured:false,accounts:[],cards:[],transactions:[],budgets:[],savingsGoals:[],investmentPlans:[],preferences:{pf:{floor:null,complete:false,checkedOn:'',monthlyGoalsReviewed:false,closedYears:[]},mei:{floor:null,complete:false,checkedOn:'',monthlyGoalsReviewed:false,closedYears:[]}},profiles:{pf:{incomeSource:'',monthlyIncomeTarget:null,dependents:0,incomePattern:'fixed'},mei:{tradeName:'',cnpj:'',activity:'',city:'',monthlyRevenueTarget:null,monthlyDas:null,dasDueDay:null,proLabore:null}},dismissed:[]}; }
 export function normalizeMonthlyGoals(data: FinanceData): FinanceData {
  const budgets=data.budgets.map(item=>({...item}));
  const preferences={...data.preferences};

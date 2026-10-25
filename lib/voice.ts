@@ -154,6 +154,7 @@ function detectCategory(text: string, space: Space, type: Kind): string {
   const source = normalize(text);
   const kind = type === 'income' || type === 'refund' ? 'income' : 'expense';
   const options = categoriesFor(space, kind);
+  if (space === 'pf' && kind === 'income' && /horas?\s*extras?|comissao|bonus|gratificacao|\bplr\b|adicional|renda variavel|renda extra/.test(source)) return 'Renda extra';
   const exact = options.find(category => source.includes(normalize(category)));
   if (exact) return exact;
 
@@ -207,7 +208,7 @@ function parseOne(text: string, data: FinanceData, currentSpace: Space, asOf: st
   else if (/\b(?:liberei|liberar|retirei|retirar)\b.*\b(?:reserva|investimento|valor separado)\b/.test(source)) type = 'release';
   else if (/\b(?:transferi|transferir|transferencia|retirada do mei)\b/.test(source)) type = 'transfer';
   else if (/\b(?:estorno|reembolso|devolveram|devolucao)\b/.test(source)) type = 'refund';
-  else if (/\b(?:recebi|receber|receita|entrou|caiu|ganhei|salario|renda|faturamento|faturei|venda|vendi)\b/.test(source)) type = 'income';
+  else if (/\b(?:recebi|receber|receita|entrou|caiu|ganhei|salario|renda|faturamento|faturei|venda|vendi)\b/.test(source) || /horas?\s*extras?|comissao|bonus|gratificacao|\bplr\b|adicional/.test(source)) type = 'income';
 
   const amount = findAmount(source);
   const paidWords = /\b(?:paguei|pago|paga|recebi|recebido|recebida|entrou|caiu|ganhei|gastei|gasto|comprei|ja foi|ja paguei|ja recebi)\b/.test(source);
@@ -253,7 +254,7 @@ function parseOne(text: string, data: FinanceData, currentSpace: Space, asOf: st
   };
 }
 
-const movementStart = /(?:eu\s+)?(?:recebi|receber|ganhei|entrou|caiu|salario|renda|faturamento|faturei|vendi|venda|paguei|pagar|gastei|gastar|comprei|comprar|transferi|transferir|separei|separar|reservei|reservar|liberei|liberar|retirei|retirar|estorno|reembolso|fatura|parcela)\b/i;
+const movementStart = /(?:eu\s+)?(?:recebi|receber|ganhei|entrou|caiu|salario|renda|faturamento|faturei|vendi|venda|paguei|pagar|gastei|gastar|comprei|comprar|transferi|transferir|separei|separar|reservei|reservar|liberei|liberar|retirei|retirar|estorno|reembolso|fatura|parcela|horas?\s*extras?|comissao|bonus|gratificacao|plr|adicional)\b/i;
 
 export function isFinancialMovement(text: string): boolean {
   const source = normalize(text).replace(/\s+/g, ' ').trim();
