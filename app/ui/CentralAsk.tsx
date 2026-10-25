@@ -6,7 +6,7 @@ import type { FinanceData, Space } from '../../lib/model';
 import { answerQuestion } from '../../lib/intelligence';
 import { isFinancialMovement } from '../../lib/voice';
 
-export default function CentralAsk({ data, space, asOf, onVoice, compact = false }: {
+export default function CentralAsk({ data, space, asOf, onVoice, onQuickEntry, onQuickTransaction, compact = false }: {
   data: FinanceData;
   space: Space;
   asOf: string;
