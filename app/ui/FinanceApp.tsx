@@ -127,12 +127,13 @@ function BankField({initialBank=''}:{initialBank?:string}){const knownBank=banks
  const [text,setText]=useState('');
  const [answer,setAnswer]=useState('');
  const {listening,message,setMessage,record}=useSpeechCapture(setText);
- const questionResponse=text.trim()?answerQuestion(text,data,space,asOf):null;
+ let questionResponse:string|null=null;
+ if(text.trim()){try{questionResponse=answerQuestion(text,data,space,asOf);}catch{questionResponse='Não consegui consultar agora. Tente novamente ou escolha uma consulta disponível.';}}
  const movement=isFinancialMovement(text);
  const actionLabel=questionResponse?'Ver resposta':movement?'Preparar lançamento':'Ver consultas disponíveis';
  function submitVoice(){
   if(questionResponse){setAnswer(questionResponse);return;}
-  if(movement){setAnswer('');try{onParsed(parseVoiceBatch(text,data,space,asOf));}catch(e){setMessage((e as Error).message);}return;}
+  if(movement){setAnswer('');try{const drafts=parseVoiceBatch(text,data,space,asOf);if(!drafts.length){setMessage('Não identifiquei uma receita ou despesa. Tente dizer o que aconteceu e o valor, ou digite a frase.');return;}onParsed(drafts);}catch(e){setMessage(e instanceof Error?e.message:'Não consegui preparar o lançamento. Tente digitar a frase.');}return;}
   setAnswer(space==='mei'?'Posso consultar seus maiores gastos, comparar com o mês anterior, acompanhar metas para guardar, mostrar alertas e aumentos de gastos, estimar quanto pode gastar ou calcular uma referência para retirada do MEI. Para lançar, diga uma receita ou despesa.':'Posso consultar seus maiores gastos, comparar com o mês anterior, acompanhar metas para guardar, mostrar alertas e aumentos de gastos ou estimar quanto pode gastar. Para lançar, diga uma receita ou despesa.');
  }
  return <div className="voice-form">

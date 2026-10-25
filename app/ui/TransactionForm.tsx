@@ -59,7 +59,9 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const [installments, setInstallments] = useState(tx?.installments || voice?.installments || 1);
   const [accountId, setAccountId] = useState(tx?.accountId || voice?.accountId || (!voice && (incomeAccounts.length === 1 || isGoalContribution) ? incomeAccounts[0]?.id || '' : ''));
   const [date, setDate] = useState(tx?.date || voice?.date || asOf);
-  const [due, setDue] = useState(tx?.dueDate || voice?.dueDate || (voice?.type === 'card_payment' && voice.date ? voice.date : voice?.cardId && voice.date ? firstCardDue(voice.date, data.cards.find(card => card.id === voice.cardId)!) : voice?.date) || (initialType === 'card_debt' ? '' : initialCardId ? firstCardDue(asOf, data.cards.find(item => item.id === initialCardId)!) : asOf));
+  const voiceCard = voice?.cardId ? data.cards.find(card => card.id === voice.cardId) : undefined;
+  const initialCard = initialCardId ? data.cards.find(card => card.id === initialCardId) : undefined;
+  const [due, setDue] = useState(tx?.dueDate || voice?.dueDate || (voice?.type === 'card_payment' && voice.date ? voice.date : voice?.cardId && voice.date && voiceCard ? firstCardDue(voice.date, voiceCard) : voice?.date) || (initialType === 'card_debt' ? '' : initialCard ? firstCardDue(asOf, initialCard) : asOf));
   const [paid, setPaid] = useState(tx?.paid ?? (voice ? voice.statusInferred ? voice.paid : false : true));
   const [estimated, setEstimated] = useState(tx?.estimated || false);
   const [amountText, setAmountText] = useState(tx ? String(tx.amount / 100) : voice?.amount ? String(voice.amount / 100) : initialAmount ? String(initialAmount / 100) : '');
