@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { ArrowRight, ArrowUpRight, BarChart3, Building2, Check, CheckCircle2, Compass, Eye, EyeOff, LockKeyhole, Mic, ShieldCheck, Sparkles, Target, Wallet } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BarChart3, Building2, Check, CheckCircle2, Compass, Download, Eye, EyeOff, LockKeyhole, Mic, ShieldCheck, Sparkles, Target, Wallet } from 'lucide-react';
 import { authClient } from '../../lib/auth-client';
 import type { Space } from '../../lib/model';
 import InstallAppCard from './InstallAppCard';
@@ -35,6 +35,19 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
     choose(p);
     setMode('signup');
     window.setTimeout(() => document.getElementById('acesso')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40);
+  }
+
+  async function installFromTop() {
+    if (!installPrompt) {
+      document.querySelector('.landing-install')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    try {
+      await installPrompt.prompt();
+      await installPrompt.userChoice;
+    } finally {
+      onInstallUsed();
+    }
   }
 
   async function submitAccount(event: FormEvent<HTMLFormElement>) {
@@ -88,7 +101,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
       <div className="landing-nav-inner">
         <a className="landing-brand" href="#inicio" aria-label="Clareia, início"><span><Compass size={21}/></span>clareia<span className="landing-brand-dot">.</span></a>
         <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#planos">Para quem</a><a href="#duvidas">Dúvidas</a></nav>
-        <div className="landing-nav-actions"><a className="landing-login-link" href="#acesso" onClick={() => setMode('login')}>Já tenho acesso</a><button className="landing-nav-cta" type="button" onClick={() => startTrial()} >Testar 30 dias grátis<ArrowRight size={15}/></button></div>
+        <div className="landing-nav-actions"><button className="landing-install-top" type="button" onClick={() => void installFromTop()} aria-label="Instalar Clareia no celular"><Download size={15}/>Instalar</button><a className="landing-login-link" href="#acesso" onClick={() => setMode('login')}>Já tenho acesso</a><button className="landing-nav-cta" type="button" onClick={() => startTrial()} >Testar 30 dias grátis<ArrowRight size={15}/></button></div>
       </div>
     </header>
 
