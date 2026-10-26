@@ -10,7 +10,7 @@ PWA com projeções financeiras, alertas explicados, registro por voz e compara�
 - Desenvolvimento: npm run dev
 - Build: npm run build
 - Integração de pagamentos: [docs/ASAAS.md](docs/ASAAS.md)
-- Publicação com domínio/infraestrutura HostGator: [deploy/hostgator/README.md](deploy/hostgator/README.md)
+- Publicação com domínio/infraestrutura Hostinger: [deploy/hostinger/README.md](deploy/hostinger/README.md)
 
 ## Infraestrutura do projeto
 
