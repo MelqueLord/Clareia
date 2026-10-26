@@ -9,8 +9,15 @@ declare namespace Cloudflare {
     AUTH_SIGNUP_ENABLED?: string;
     TRIAL_DURATION_DAYS?: string;
     TRIAL_ADMIN_EMAIL?: string;
+    PILOT_MAX_ACCOUNTS?: string;
     RESEND_API_KEY?: string;
     RESEND_FROM_EMAIL?: string;
     RESEND_REPLY_TO?: string;
+    ASAAS_API_KEY?: string;
+    ASAAS_ENVIRONMENT?: string;
+    ASAAS_WEBHOOK_TOKEN?: string;
+    ASAAS_RETURN_URL?: string;
+    ASAAS_PF_PRICE_CENTS?: string;
+    ASAAS_MEI_PRICE_CENTS?: string;
   }
 }

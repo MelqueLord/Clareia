@@ -13,9 +13,19 @@ export const accountAccess = sqliteTable('account_access', {
   trialStartedAt: integer('trial_started_at').notNull(),
   trialEndsAt: integer('trial_ends_at').notNull(),
   billingPeriodEndsAt: integer('billing_period_ends_at'),
+  providerCustomerId: text('provider_customer_id'),
   providerSubscriptionId: text('provider_subscription_id'),
+  providerPaymentId: text('provider_payment_id'),
   subscriptionRequestedAt: integer('subscription_requested_at'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`).notNull(),
 }, table => [index('account_access_status_idx').on(table.status), index('account_access_trial_ends_idx').on(table.trialEndsAt)]);
+export const billingEvents = sqliteTable('billing_events', {
+  id: text('id').primaryKey(),
+  eventType: text('event_type').notNull(),
+  providerPaymentId: text('provider_payment_id'),
+  providerSubscriptionId: text('provider_subscription_id'),
+  receivedAt: integer('received_at').notNull(),
+  processedAt: integer('processed_at'),
+}, table => [index('billing_events_processed_idx').on(table.processedAt), index('billing_events_subscription_idx').on(table.providerSubscriptionId)]);
 export { user, session, account, verification, rateLimit } from './auth-schema';

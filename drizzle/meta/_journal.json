@@ -57,6 +57,13 @@
       "when": 1792789467797,
       "tag": "0007_spicy_hemingway",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793042428322,
+      "tag": "0008_tense_leopardon",
+      "breakpoints": true
     }
   ]
 }

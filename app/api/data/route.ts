@@ -20,7 +20,7 @@ function scopedData(data:FinanceData,space:Space,mirrorIncoming=false):FinanceDa
   const destination=data.accounts?.find(a=>a.id===t.toAccountId);
   if(destination?.space===space)transactions.push({...t,id:'migrated-'+crypto.randomUUID(),description:'Transferência recebida · '+t.description,type:'income',category:'Transferências recebidas',accountId:destination.id,toAccountId:'',cardId:'',space,installments:1,recurring:false});
  }
- return {...defaults,...data,configured:accounts.length>0,accounts,cards,cardBanks:{...defaults.cardBanks,[space]:(data.cardBanks?.[space]||[]).slice(0,50)},transactions,budgets:(data.budgets||[]).filter(b=>b.space===space),savingsGoals:(data.savingsGoals||[]).filter(g=>g.space===space),preferences:{...defaults.preferences,[space]:data.preferences?.[space]||defaults.preferences[space]},profiles:{...defaults.profiles,[space]:data.profiles?.[space]||defaults.profiles[space]},dismissed:data.dismissed||[]};
+ return {...defaults,...data,configured:accounts.length>0,accounts,cards,cardBanks:{pf:space==='pf'?(data.cardBanks?.pf||[]).slice(0,50):(defaults.cardBanks?.pf||[]),mei:space==='mei'?(data.cardBanks?.mei||[]).slice(0,50):(defaults.cardBanks?.mei||[])},transactions,budgets:(data.budgets||[]).filter(b=>b.space===space),savingsGoals:(data.savingsGoals||[]).filter(g=>g.space===space),preferences:{...defaults.preferences,[space]:data.preferences?.[space]||defaults.preferences[space]},profiles:{...defaults.profiles,[space]:data.profiles?.[space]||defaults.profiles[space]},dismissed:data.dismissed||[]};
 }
 async function migrateLegacyUser(legacyUserId:string){
  if(!env.DB)return;
