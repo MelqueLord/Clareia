@@ -20,28 +20,15 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
   const [recoveryBusy, setRecoveryBusy] = useState(false);
   const [recoveryMessage, setRecoveryMessage] = useState('');
   const [recoveryError, setRecoveryError] = useState('');
-  const [demoPassword, setDemoPassword] = useState('Clareia2026!');
   const [showPassword, setShowPassword] = useState(false);
-  const [showDemoPassword, setShowDemoPassword] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [demoBusy, setDemoBusy] = useState(false);
   const [error, setError] = useState('');
-  const [demoError, setDemoError] = useState('');
-  const [demoOpen, setDemoOpen] = useState(false);
 
-  const demoEmail = profile === 'pf' ? 'pf@teste.clareia.app' : 'mei@teste.clareia.app';
   const profileName = profile === 'mei' ? 'MEI' : 'pessoa física';
 
   function choose(p: Space) {
     setProfile(p);
     setError('');
-    setDemoError('');
-  }
-
-  function openDemoFor(p: Space = profile) {
-    choose(p);
-    setDemoOpen(true);
-    window.setTimeout(() => document.getElementById('demo-access')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40);
   }
 
   function startTrial(p: Space = profile) {
@@ -93,26 +80,6 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
       setRecoveryError(cause instanceof Error ? cause.message : 'Não foi possível registrar o pedido agora.');
     } finally {
       setRecoveryBusy(false);
-    }
-  }
-
-  async function submitDemo(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setDemoBusy(true);
-    setDemoError('');
-    try {
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: demoEmail, password: demoPassword }),
-      });
-      const result = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(result.error || 'Não foi possível abrir a demonstração.');
-      onLogin();
-    } catch (cause) {
-      setDemoError(cause instanceof Error ? cause.message : 'Não foi possível abrir a demonstração.');
-    } finally {
-      setDemoBusy(false);
     }
   }
 
@@ -199,18 +166,6 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
           </form>}
           {mode === 'signup' && <p className="test-access-note"><strong>Homologação com até 30 contas.</strong> Teste grátis por 30 dias, sem cartão e sem cobrança automática. No fim, você escolhe se quer assinar.</p>}
           <div className="login-note"><LockKeyhole size={16}/><p>Para usar PF e MEI separadamente, cada perfil precisa de sua própria conta.</p></div>
-          <details id="demo-access" className="demo-access" open={demoOpen} onToggle={event => setDemoOpen(event.currentTarget.open)}>
-            <summary>Testar com uma conta de demonstração</summary>
-            <div className="test-label"><span/>AMBIENTE DE DEMONSTRAÇÃO</div>
-            <p className="small-text muted">Use dados fictícios para conhecer o Clareia. Alterações ficam apenas nesta sessão e não afetam outros visitantes.</p>
-            <form onSubmit={submitDemo}>
-              <label>E-mail da demonstração<input type="email" autoComplete="username" readOnly value={demoEmail}/></label>
-              <label>Senha<div className="password-field"><input type={showDemoPassword ? 'text' : 'password'} autoComplete="current-password" value={demoPassword} onChange={event => setDemoPassword(event.target.value)} required/><button type="button" aria-label={showDemoPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowDemoPassword(!showDemoPassword)}>{showDemoPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div></label>
-              {demoError && <p role="alert" className="login-error">{demoError}</p>}
-              <button className="button secondary login-submit" disabled={demoBusy}>{demoBusy ? 'Entrando…' : `Abrir demonstração ${profile === 'mei' ? 'MEI' : 'PF'}`}<ArrowRight size={18}/></button>
-            </form>
-            <p className="test-password">A demonstração não é uma conta de produção. Alterações são temporárias e os dados são reiniciados ao entrar novamente.</p>
-          </details>
         </div>
       </section>
       <div className="landing-install"><InstallAppCard prompt={installPrompt} onPromptUsed={onInstallUsed} variant="login"/></div>
