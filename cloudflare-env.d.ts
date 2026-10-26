@@ -12,6 +12,5 @@ declare namespace Cloudflare {
     RESEND_API_KEY?: string;
     RESEND_FROM_EMAIL?: string;
     RESEND_REPLY_TO?: string;
-    CLEAR_TEST_ACCOUNTS_KEY?: string;
   }
 }
