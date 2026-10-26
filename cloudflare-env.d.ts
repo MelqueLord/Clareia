@@ -9,5 +9,8 @@ declare namespace Cloudflare {
     AUTH_SIGNUP_ENABLED?: string;
     TRIAL_DURATION_DAYS?: string;
     TRIAL_ADMIN_EMAIL?: string;
+    RESEND_API_KEY?: string;
+    RESEND_FROM_EMAIL?: string;
+    RESEND_REPLY_TO?: string;
   }
 }

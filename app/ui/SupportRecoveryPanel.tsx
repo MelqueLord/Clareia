@@ -54,6 +54,6 @@ export default function SupportRecoveryPanel({ space, saving, onRestore, onExpor
     <a className="support-panel-link" href="/suporte"><ShieldCheck size={16}/> Ver passo a passo e falar com o suporte</a>
     <div className="support-backup-row"><div><strong>Cópia de segurança</strong><p className="small-text muted">Guarde um arquivo JSON no aparelho. A restauração substitui os dados do perfil atual.</p></div><div className="support-backup-actions"><button className="button secondary" onClick={onExport}><Download size={15}/> Exportar</button><button className="button secondary" disabled={busy || saving} onClick={() => inputRef.current?.click()}><Upload size={15}/>{busy || saving ? 'Restaurando…' : 'Restaurar cópia'}</button><input ref={inputRef} type="file" accept="application/json,.json" onChange={event => void importBackup(event)} hidden/></div></div>
     {error && <p className="trial-admin-message error" role="alert">{error}</p>}{message && <p className="trial-admin-message" role="status">{message}</p>}
-    <p className="support-backup-note"><Mail size={14}/> Recuperação de senha por e-mail ainda depende do suporte; não envie sua senha.</p>
+    <p className="support-backup-note"><Mail size={14}/> Para redefinir a senha, use “Esqueceu sua senha?” na tela de acesso. Confira também o spam; se o link não chegar, fale com o suporte. Nunca envie sua senha.</p>
   </section>;
 }

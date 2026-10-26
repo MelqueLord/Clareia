@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { getFinanceUser } from '../../../../lib/session';
 import { isTrialAdmin } from '../../../../lib/trial-admin';
+import { recoveryEmailConfigured } from '../../../../lib/recovery-email';
 
 export const dynamic = 'force-dynamic';
 const reply = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store, private' } });
@@ -24,7 +25,7 @@ export async function GET(req: Request) {
       FROM verification v JOIN user u ON v.identifier=('support-reset-link:' || u.id)
       WHERE v.expires_at>? ORDER BY v.created_at DESC LIMIT 50
     `).bind(now).all();
-    return reply({ requests: rows.results });
+    return reply({ requests: rows.results, emailDeliveryConfigured: recoveryEmailConfigured() });
   } catch {
     return reply({ error: 'Não foi possível carregar as solicitações de recuperação.' }, 503);
   }

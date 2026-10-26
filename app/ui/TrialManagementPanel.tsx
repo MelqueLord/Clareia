@@ -28,6 +28,7 @@ export default function TrialManagementPanel() {
   const [recoveries, setRecoveries] = useState<RecoveryRow[]>([]);
   const [recoveryLoading, setRecoveryLoading] = useState(true);
   const [recoveryBusy, setRecoveryBusy] = useState('');
+  const [recoveryEmailConfigured, setRecoveryEmailConfigured] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -48,8 +49,11 @@ export default function TrialManagementPanel() {
     setRecoveryLoading(true);
     try {
       const response = await fetch('/api/admin/recovery', { cache: 'no-store' });
-      const result = await response.json() as { requests?: RecoveryRow[] };
-      if (response.ok) setRecoveries(result.requests || []);
+      const result = await response.json() as { requests?: RecoveryRow[]; emailDeliveryConfigured?: boolean };
+      if (response.ok) {
+        setRecoveries(result.requests || []);
+        setRecoveryEmailConfigured(Boolean(result.emailDeliveryConfigured));
+      }
     } finally { setRecoveryLoading(false); }
   }
 
@@ -98,7 +102,7 @@ export default function TrialManagementPanel() {
       <div className="trial-admin-actions"><button className="button secondary" disabled={busyId===account.id} onClick={()=>void update(account,'extend_trial')}>+ 7 dias de teste</button><button className="button secondary" disabled={busyId===account.id} onClick={()=>void update(account,'activate')}><Wallet size={14}/> Liberar 30 dias</button><button className="button danger-button" disabled={busyId===account.id} onClick={()=>void update(account,'block')}>Bloquear</button></div>
     </article>)}</div>}
     <div className="recovery-admin-section"><div className="recovery-admin-title"><div><span className="trial-admin-icon"><KeyRound size={18}/></span><div><h3>Recuperação de senha</h3><p>Links temporários aguardando atendimento. Expiram em 1 hora.</p></div></div><button className="icon-button" aria-label="Atualizar pedidos de recuperação" disabled={recoveryLoading} onClick={()=>void refreshRecoveries()}><RefreshCw size={15}/></button></div>
-      <p className="recovery-admin-note">O envio automático de e-mail ainda não está configurado. Abra o e-mail do cliente pelo botão abaixo e encaminhe o link. O Clareia nunca mostra nem envia a senha atual.</p>
+      <p className="recovery-admin-note">{recoveryEmailConfigured ? 'O envio automático está configurado. Se uma mensagem for recusada ou o serviço ficar indisponível, o pedido aparecerá abaixo para envio manual.' : 'O envio automático ainda precisa das variáveis RESEND_API_KEY e RESEND_FROM_EMAIL. Até configurar, os pedidos aparecem abaixo para envio manual.'} O link expira em 1 hora, pode ser usado uma única vez e o Clareia nunca mostra nem envia a senha atual.</p>
       {recoveryLoading?<p className="muted small-text">Carregando pedidos…</p>:recoveries.length===0?<p className="muted small-text">Nenhum pedido pendente.</p>:<div className="recovery-admin-list">{recoveries.map(item=>{const subject=encodeURIComponent('Link para redefinir sua senha do Clareia');const body=encodeURIComponent(`Olá, ${item.name || 'tudo bem'}?\n\nUse este link para definir uma nova senha do seu acesso ${item.space==='mei'?'MEI':'Pessoa Física'} ao Clareia. Ele expira em 1 hora e pode ser usado uma única vez:\n\n${item.resetUrl}\n\nSe você não solicitou essa alteração, ignore esta mensagem.`);return <article className="recovery-admin-row" key={item.id}><div><strong>{item.name || item.email}</strong><small>{item.email} · {item.space==='mei'?'MEI':'Pessoa Física'}</small><small>Expira às {when(item.expiresAt)}</small></div><div className="recovery-admin-actions"><a className="button secondary" href={`mailto:${encodeURIComponent(item.email)}?subject=${subject}&body=${body}`}><Mail size={14}/> Enviar link</a><button className="button secondary" disabled={recoveryBusy===item.id} onClick={()=>void closeRecovery(item.id)}><Check size={14}/> Resolvido</button></div></article>;})}</div>}
     </div>
   </section>;

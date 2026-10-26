@@ -88,7 +88,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
         body: JSON.stringify({ email: recoveryEmail.trim().toLowerCase(), redirectTo: `${window.location.origin}/redefinir-senha` }),
       });
       if (!response.ok) throw new Error('Não foi possível registrar o pedido agora. Tente novamente.');
-      setRecoveryMessage('Se este e-mail estiver cadastrado, o pedido foi encaminhado para recuperação. O envio automático de e-mail ainda não está configurado; fale com o suporte para receber o link temporário.');
+      setRecoveryMessage('Se este e-mail estiver cadastrado, enviaremos as instruções. Confira sua caixa de entrada e o spam. Se a mensagem não chegar, fale com o suporte.');
     } catch (cause) {
       setRecoveryError(cause instanceof Error ? cause.message : 'Não foi possível registrar o pedido agora.');
     } finally {

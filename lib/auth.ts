@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { env } from "cloudflare:workers";
+import { getRequestExecutionContext } from "vinext/shims/request-context";
+import { sendRecoveryEmail } from "./recovery-email";
 
 // Keep builds usable without local credentials. Cloudflare forbids generating
 // random values during module initialization. Every production auth route
@@ -104,14 +106,27 @@ export const auth = betterAuth({
       const now = Date.now();
       const identifier = `support-reset-link:${user.id}`;
       const activeResetIdentifier = `reset-password:${token}`;
-      // Email delivery is not configured yet. Keep one short-lived link in the
-      // existing verification table for the authorized support administrator.
+      const resetUrl = new URL('/redefinir-senha', env.BETTER_AUTH_URL || new URL(url).origin);
+      resetUrl.searchParams.set('token', token);
+
+      // Invalidate older requests first; only the newest one-time link remains usable.
       await env.DB.batch([
         env.DB.prepare("DELETE FROM verification WHERE value=? AND identifier LIKE 'reset-password:%' AND identifier<>?").bind(user.id, activeResetIdentifier),
         env.DB.prepare('DELETE FROM verification WHERE identifier=?').bind(identifier),
-        env.DB.prepare('INSERT INTO verification(id,identifier,value,expires_at,created_at,updated_at) VALUES(?,?,?,?,?,?)')
-          .bind(crypto.randomUUID(), identifier, url, now + 60 * 60 * 1000, now, now),
       ]);
+
+      const queueForSupport = async () => {
+        await env.DB!.prepare('INSERT INTO verification(id,identifier,value,expires_at,created_at,updated_at) VALUES(?,?,?,?,?,?)')
+          .bind(crypto.randomUUID(), identifier, resetUrl.toString(), now + 60 * 60 * 1000, now, now).run();
+      };
+      const deliverOrQueue = async () => {
+        const sent = await sendRecoveryEmail({ email: user.email, name: user.name || '', resetUrl: resetUrl.toString() });
+        if (!sent) await queueForSupport();
+      };
+
+      const requestContext = getRequestExecutionContext();
+      if (requestContext) requestContext.waitUntil(deliverOrQueue().catch(() => {}));
+      else await deliverOrQueue();
     },
     onPasswordReset: async ({ user }) => {
       if (!env.DB) return;
