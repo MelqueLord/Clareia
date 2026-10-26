@@ -101,7 +101,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
       <div className="landing-nav-inner">
         <a className="landing-brand" href="#inicio" aria-label="Clareia, início"><span><Compass size={21}/></span>clareia<span className="landing-brand-dot">.</span></a>
         <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#planos">Para quem</a><a href="#duvidas">Dúvidas</a></nav>
-        <div className="landing-nav-actions"><button className="landing-install-top" type="button" onClick={() => void installFromTop()} aria-label="Instalar Clareia no celular"><Download size={15}/>Instalar</button><a className="landing-login-link" href="#acesso" onClick={() => setMode('login')}>Já tenho acesso</a><button className="landing-nav-cta" type="button" onClick={() => startTrial()} >Testar 30 dias grátis<ArrowRight size={15}/></button></div>
+        <div className="landing-nav-actions"><button className="landing-install-top" type="button" onClick={() => void installFromTop()} aria-label="Instalar Clareia na tela inicial"><Download size={15}/>Instalar app</button><a className="landing-login-link" href="#acesso" onClick={() => setMode('login')}>Já tenho acesso</a><button className="landing-nav-cta" type="button" onClick={() => startTrial()} >Testar 30 dias grátis<ArrowRight size={15}/></button></div>
       </div>
     </header>
 
@@ -113,6 +113,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
           <p className="landing-hero-lead">O Clareia é seu assistente financeiro para a correria do dia a dia: você conta por áudio ou texto o que recebeu ou pagou, confere o lançamento e acompanha o mês com orientação baseada nos seus registros.</p>
           <div className="landing-hero-actions"><button type="button" className="landing-primary-cta" onClick={() => startTrial()}><Mic size={17}/> Quero clareza para meu mês <ArrowRight size={17}/></button><a href="#como-funciona" className="landing-text-cta">Veja como funciona <ArrowUpRight size={15}/></a></div>
           <div className="landing-trust-note"><ShieldCheck size={17}/><span>30 dias grátis, sem cartão e sem cobrança automática.</span></div>
+          <div className="landing-install-explainer"><Download size={16}/><span><strong>Quer o Clareia na tela inicial?</strong> Toque em <b>Instalar app</b>. No Android, confirme a instalação. No iPhone, siga <b>Compartilhar › Adicionar à Tela de Início</b>.</span></div>
         </div>
 
         <div className="landing-product" aria-label="Exemplo ilustrativo do Clareia">

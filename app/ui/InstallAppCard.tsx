@@ -57,10 +57,10 @@ export default function InstallAppCard({
       <span className="install-app-icon">{installed ? <Check size={19}/> : <Smartphone size={19}/>}</span>
       <div>
         <h3>{installed ? 'Clareia está instalado' : 'Tenha o Clareia na tela inicial'}</h3>
-        <p>{installed ? 'Abra o ícone para usar o Clareia como um aplicativo.' : 'Abra suas finanças direto pelo ícone, em uma janela própria.'}</p>
+        <p>{installed ? 'Abra o ícone para usar o Clareia como um aplicativo.' : 'Toque em “Instalar app” para colocar o Clareia na tela inicial do Android ou iPhone.'}</p>
       </div>
     </div>
-    {!installed && prompt && <button type="button" className="button secondary install-app-button" onClick={install}><Download size={16}/>Adicionar à tela inicial</button>}
+    {!installed && prompt && <button type="button" className="button secondary install-app-button" onClick={install}><Download size={16}/>Instalar app na tela inicial</button>}
     {!installed && ios && <ol className="install-app-steps">
       <li>Abra esta página no Safari e toque em <Share2 size={14}/> <strong>Compartilhar</strong>.</li>
       <li>Escolha <strong>Adicionar à Tela de Início</strong> e confirme.</li>
