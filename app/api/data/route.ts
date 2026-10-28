@@ -8,7 +8,7 @@ import { isTrialAdmin } from '../../../lib/trial-admin';
 export const dynamic='force-dynamic';
 const reply=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 function allowed(req:Request){const origin=req.headers.get('origin');return !origin||origin===new URL(req.url).origin;}
-function scopedData(data:FinanceData,space:Space,mirrorIncoming=false):FinanceData{
+export function scopedData(data:FinanceData,space:Space,mirrorIncoming=false):FinanceData{
  const defaults=emptyData(),accounts=(data.accounts||[]).filter(a=>a.space===space),cards=(data.cards||[]).filter(c=>c.space===space);
  const transactions=(data.transactions||[]).filter(t=>t.space===space).map(t=>{
   if(t.type!=='transfer')return t;
@@ -22,7 +22,7 @@ function scopedData(data:FinanceData,space:Space,mirrorIncoming=false):FinanceDa
  }
  return {...defaults,...data,configured:accounts.length>0,accounts,cards,cardBanks:{pf:space==='pf'?(data.cardBanks?.pf||[]).slice(0,50):(defaults.cardBanks?.pf||[]),mei:space==='mei'?(data.cardBanks?.mei||[]).slice(0,50):(defaults.cardBanks?.mei||[])},transactions,budgets:(data.budgets||[]).filter(b=>b.space===space),savingsGoals:(data.savingsGoals||[]).filter(g=>g.space===space),preferences:{...defaults.preferences,[space]:data.preferences?.[space]||defaults.preferences[space]},profiles:{...defaults.profiles,[space]:data.profiles?.[space]||defaults.profiles[space]},dismissed:data.dismissed||[]};
 }
-async function migrateLegacyUser(legacyUserId:string){
+export async function migrateLegacyUser(legacyUserId:string){
  if(!env.DB)return;
  const legacy=await env.DB.prepare('SELECT payload,revision,mutation_id,updated_at FROM finance_documents WHERE user_id=?').bind(legacyUserId).first<{payload:string;revision:number;mutation_id:string;updated_at:string}>();
  if(!legacy)return;
@@ -54,6 +54,7 @@ export async function GET(req:Request){
  if(user.mustChangePassword)return reply({error:'Altere sua senha para continuar.',mustChangePassword:true,user:{id:user.authUserId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:false,mustChangePassword:true}},428);
  try{
   const access=user.isTest?demoAccess:await getAccountAccess(user.authUserId!);
+  if(!access.canUse)return reply({error:'Seu teste grátis terminou. Escolha um plano para continuar.',code:'TRIAL_EXPIRED',user:{id:user.userId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:user.isTest,mustChangePassword:user.mustChangePassword,isAdmin:!user.isTest&&isTrialAdmin(user.email)},access},402);
   let row=await env.DB.prepare('SELECT payload,revision,updated_at FROM finance_documents WHERE user_id=?').bind(user.userId).first<{payload:string;revision:number;updated_at:string}>();
   if(!row&&'legacyUserId'in user&&typeof user.legacyUserId==='string'){await migrateLegacyUser(user.legacyUserId);row=await env.DB.prepare('SELECT payload,revision,updated_at FROM finance_documents WHERE user_id=?').bind(user.userId).first<{payload:string;revision:number;updated_at:string}>();}
   const audit=await env.DB.prepare('SELECT action,created_at FROM finance_audit WHERE user_id=? ORDER BY created_at DESC LIMIT 20').bind(user.userId).all();

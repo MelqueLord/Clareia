@@ -33,7 +33,7 @@ Estas contas são compartilhadas por quem acessa o teste. Não cadastrar dados r
 - Voz depende do suporte e das permissões do navegador. A captura de microfone precisa ser testada em aparelho real. Digitação e ditado do teclado são alternativas.
 - Alertas aparecem dentro do app ao abrir ou atualizar os dados. Push com o aplicativo fechado ainda não está implementado.
 - Catálogo inicial de instituições brasileiras mais opção de digitar qualquer banco; não é o catálogo completo do Banco Central.
-- PDF, CSV e OFX fora do escopo. A exportação JSON não possui restauração pela interface.
+- CSV e OFX fora do escopo. A importação de fatura em PDF lê texto selecionável no navegador; PDFs digitalizados, protegidos por senha ou em leiautes não reconhecidos exigem revisão manual. A exportação JSON não possui restauração pela interface.
 - Funcionamento offline parcial: não há cópia completa dos dados reais no cache; abrir o app do zero sem conexão exibe a tela offline.
 - Contas e cartões podem ser adicionados; sua edição/exclusão ainda não está disponível. Orçamentos podem ser substituídos por categoria.
 - A recorrência produz projeções, não lançamentos históricos automáticos. O pagamento deve ser registrado. Projeções dependem da cobertura e qualidade dos dados.
