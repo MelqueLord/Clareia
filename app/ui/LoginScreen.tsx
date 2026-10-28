@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { ArrowRight, ArrowUpRight, BarChart3, Building2, Check, CheckCircle2, Compass, Download, Eye, EyeOff, LockKeyhole, Mic, ShieldCheck, Sparkles, Target, Wallet } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BarChart3, Building2, Check, CheckCircle2, Compass, Download, Eye, EyeOff, FileText, LockKeyhole, Mic, ShieldCheck, Sparkles, Target, Wallet } from 'lucide-react';
 import { authClient } from '../../lib/auth-client';
 import type { Space } from '../../lib/model';
 import InstallAppCard from './InstallAppCard';
@@ -100,7 +100,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
     <header className="landing-nav">
       <div className="landing-nav-inner">
         <a className="landing-brand" href="#inicio" aria-label="Clareia, início"><span><Compass size={21}/></span>clareia<span className="landing-brand-dot">.</span></a>
-        <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#planos">Para quem</a><a href="#duvidas">Dúvidas</a></nav>
+        <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#fatura-pdf">Fatura PDF</a><a href="#planos">Para quem</a><a href="#duvidas">Dúvidas</a></nav>
         <div className="landing-nav-actions"><button className="landing-install-top" type="button" onClick={() => void installFromTop()} aria-label="Instalar Clareia na tela inicial"><Download size={15}/>Instalar app</button><a className="landing-login-link" href="#acesso" onClick={() => setMode('login')}>Já tenho acesso</a><button className="landing-nav-cta" type="button" onClick={() => startTrial()} >Testar 30 dias grátis<ArrowRight size={15}/></button></div>
       </div>
     </header>
@@ -132,6 +132,33 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
           <article className="landing-feature"><span className="landing-feature-number">01</span><span className="landing-feature-icon"><Mic size={20}/></span><h3>“Eu anoto depois” — e esqueço</h3><p>Pequenos gastos somem da memória quando o dia está cheio. Registre por voz ou texto assim que acontecer.</p><span className="landing-feature-tag">Comece com uma frase</span></article>
           <article className="landing-feature"><span className="landing-feature-number">02</span><span className="landing-feature-icon"><BarChart3 size={20}/></span><h3>A fatura chega e muda o mês</h3><p>Parcelas e compromissos do cartão também pesam no orçamento. Acompanhe o que ainda vai sair.</p><span className="landing-feature-tag">Cartões e parcelas</span></article>
           <article className="landing-feature"><span className="landing-feature-number">03</span><span className="landing-feature-icon"><Target size={20}/></span><h3>Seu dinheiro pessoal não é o caixa do MEI</h3><p>Escolha o espaço certo para cada realidade: Pessoa Física e MEI têm acessos e dados separados.</p><span className="landing-feature-tag">Cada perfil no seu lugar</span></article>
+        </div>
+      </section>
+
+      <section id="fatura-pdf" className="landing-statement">
+        <div className="landing-statement-copy">
+          <span className="landing-eyebrow"><FileText size={14}/> SUA FATURA, SEM REDIGITAR COMPRA POR COMPRA</span>
+          <h2>A fatura chegou. Não espere o susto para entender para onde foi o dinheiro.</h2>
+          <p>Depois de cadastrar seu cartão, envie o PDF da fatura. O Clareia identifica possíveis compras e prepara uma lista para você revisar, corrigir e só então importar.</p>
+          <ul className="landing-statement-benefits">
+            <li><CheckCircle2 size={17}/> Veja as compras organizadas antes de confirmar</li>
+            <li><CheckCircle2 size={17}/> Confira valores, datas e categorias com calma</li>
+            <li><ShieldCheck size={17}/> O PDF é lido no seu aparelho e não é armazenado pelo Clareia</li>
+          </ul>
+          <p className="landing-statement-limit">Funciona com PDFs que têm texto selecionável, de até 15 MB e 40 páginas. Faturas digitalizadas podem não ser reconhecidas.</p>
+          <button type="button" className="landing-primary-cta" onClick={() => startTrial()}><FileText size={17}/> Quero organizar minha fatura <ArrowRight size={17}/></button>
+          <span className="landing-statement-reassurance">Comece com 30 dias grátis. Sem cartão e sem cobrança automática.</span>
+        </div>
+        <div className="landing-statement-preview" aria-label="Exemplo ilustrativo da revisão de uma fatura">
+          <div className="landing-statement-paper">
+            <div className="landing-statement-paper-head"><span className="landing-statement-file-icon"><FileText size={19}/></span><span><strong>Fatura-cartao.pdf</strong><small>PRÉVIA ILUSTRATIVA · REVISÃO ANTES DE IMPORTAR</small></span><CheckCircle2 size={18}/></div>
+            <div className="landing-statement-total"><span>Compras identificadas</span><strong>Confira cada lançamento</strong></div>
+            <div className="landing-statement-row"><span><b>Mercado Central</b><small>12 mai · Alimentação</small></span><strong>R$ 186,40</strong><Check size={16}/></div>
+            <div className="landing-statement-row"><span><b>Farmácia Saúde</b><small>14 mai · Saúde</small></span><strong>R$ 72,90</strong><Check size={16}/></div>
+            <div className="landing-statement-row"><span><b>Loja Casa & Cia</b><small>Parcela 2 de 4 · revisar</small></span><strong>R$ 119,90</strong><Check size={16}/></div>
+            <div className="landing-statement-review"><ShieldCheck size={16}/><span>Você confere os dados antes de salvar. Nada entra automaticamente.</span></div>
+            <div className="landing-statement-confirm">Revisar e importar lançamentos <ArrowRight size={14}/></div>
+          </div>
         </div>
       </section>
 
