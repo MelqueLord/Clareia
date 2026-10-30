@@ -124,7 +124,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
         </div>
       </section>
 
-      <section className="landing-offer" aria-label="Teste grátis"><div className="landing-offer-icon"><CheckCircle2 size={20}/></div><div><span>30 DIAS PARA EXPERIMENTAR NA SUA ROTINA</span><strong>Comece pelo próximo gasto. Veja o que fica mais fácil de entender.</strong><p>Você não precisa preencher tudo hoje. Teste sem cartão e sem cobrança automática; no fim, escolha se quer continuar.</p></div><button type="button" onClick={() => startTrial()}>Quero testar grátis <ArrowRight size={16}/></button></section>
+      <section className="landing-offer" aria-label="Teste grátis"><div className="landing-offer-icon"><CheckCircle2 size={20}/></div><div><span>7 DIAS PARA EXPERIMENTAR NA SUA ROTINA</span><strong>Comece pelo próximo gasto. Veja o que fica mais fácil de entender.</strong><p>Você não precisa preencher tudo hoje. Teste sem cartão e sem cobrança automática; no fim, escolha se quer continuar.</p></div><button type="button" onClick={() => startTrial()}>Quero testar grátis <ArrowRight size={16}/></button></section>
 
       <section id="como-funciona" className="landing-section landing-how">
         <div className="landing-section-heading"><span className="landing-eyebrow">VOCÊ NÃO PRECISA ESPERAR O PRÓXIMO SUSTO</span><h2>Se alguma destas situações acontece com você, comece por aqui.</h2><p>Organizar as finanças não precisa tomar seu dia. O Clareia ajuda com passos pequenos, usando os dados que você registra.</p></div>
@@ -208,7 +208,7 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
             {recoveryMessage && <p role="status" className="recovery-status">{recoveryMessage} <a href="/suporte">Abrir suporte</a></p>}
             <button className="button secondary login-submit" disabled={recoveryBusy}>{recoveryBusy ? 'Registrando pedido…' : 'Solicitar recuperação'}</button>
           </form>}
-          {mode === 'signup' && <p className="test-access-note"><strong>Até 10 contas de teste.</strong> Teste grátis por 7 dias, sem cartão e sem cobrança automática. No fim, você escolhe se quer assinar.</p>}
+          {mode === 'signup' && <p className="test-access-note">Teste grátis por 7 dias, sem cartão e sem cobrança automática. No fim, você escolhe se quer assinar.</p>}
           <div className="login-note"><LockKeyhole size={16}/><p>Para usar PF e MEI separadamente, cada perfil precisa de sua própria conta.</p></div>
         </div>
       </section>
