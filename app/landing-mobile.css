@@ -1,0 +1,332 @@
+.clareia-landing {
+  overflow-x: clip;
+  background:
+    radial-gradient(circle at 88% 7%, rgba(221, 237, 215, .56), transparent 24rem),
+    linear-gradient(180deg, #fbfcf8 0%, #f7faf6 58%, #fbfcf8 100%);
+}
+
+.landing-nav {
+  background: rgba(251, 252, 248, .92);
+  box-shadow: 0 8px 24px rgba(26, 61, 48, .035);
+}
+
+.landing-brand > span:first-child {
+  box-shadow: 0 5px 12px rgba(15, 107, 87, .17);
+}
+
+.landing-nav-cta,
+.landing-primary-cta,
+.landing-plan-cta,
+.landing-offer > button,
+.landing-voice-band > button {
+  transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease;
+}
+
+.landing-auth-card,
+.landing-plan-card,
+.landing-feature,
+.landing-statement {
+  box-shadow: 0 14px 38px rgba(28, 61, 47, .055), 0 2px 7px rgba(28, 61, 47, .035);
+}
+
+.landing-feature,
+.landing-plan-card {
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+@media (hover: hover) {
+  .landing-feature:hover,
+  .landing-plan-card:hover {
+    transform: translateY(-3px);
+    border-color: #cbdcc9;
+    box-shadow: 0 19px 40px rgba(28, 61, 47, .09);
+  }
+}
+
+.landing-hero h1 {
+  text-wrap: balance;
+}
+
+.landing-section-heading h2,
+.landing-statement-copy h2,
+.landing-final-cta h2,
+.landing-access-intro h2 {
+  text-wrap: balance;
+}
+
+#inicio,
+#como-funciona,
+#fatura-pdf,
+#planos,
+#duvidas,
+#acesso {
+  scroll-margin-top: 86px;
+}
+
+@media (max-width: 720px) {
+  .landing-nav-inner {
+    height: 66px;
+    padding: 0 16px;
+    gap: 9px;
+  }
+
+  .landing-nav-actions {
+    gap: 9px;
+  }
+
+  .landing-install-top {
+    display: none;
+  }
+
+  .landing-nav-actions > .landing-nav-cta {
+    display: inline-flex;
+    min-height: 42px;
+    padding: 0 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .landing-login-link {
+    font-size: 11px;
+  }
+
+  .landing-hero {
+    gap: 29px;
+    padding: 39px 19px 35px;
+  }
+
+  .landing-hero-copy > .landing-eyebrow {
+    padding: 7px 10px;
+    font-size: 9px;
+    letter-spacing: .75px;
+  }
+
+  .landing-hero h1 {
+    max-width: 560px;
+    margin: 17px 0 13px;
+    font-size: clamp(37px, 10vw, 47px);
+    line-height: 1.07;
+    letter-spacing: -1.9px;
+  }
+
+  .landing-hero-lead {
+    max-width: 48rem;
+    color: #52685d;
+    font-size: 15px;
+    line-height: 1.68;
+  }
+
+  .landing-hero-actions {
+    gap: 8px;
+    margin-top: 19px;
+  }
+
+  .landing-hero-actions .landing-primary-cta {
+    min-height: 52px;
+    border-radius: 14px;
+    font-size: 13px;
+  }
+
+  .landing-text-cta {
+    min-height: 44px;
+    font-size: 12px;
+  }
+
+  .landing-trust-note {
+    align-items: flex-start;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .landing-product {
+    padding: 17px;
+    border-radius: 22px;
+    box-shadow: 0 20px 44px rgba(36, 75, 57, .1), 0 3px 10px rgba(21, 58, 38, .06);
+  }
+
+  .landing-offer {
+    margin: 0 13px;
+    padding: 16px;
+    border-radius: 17px;
+  }
+
+  .landing-offer > button,
+  .landing-voice-band > button {
+    min-height: 46px;
+    border-radius: 12px;
+    font-size: 12px;
+  }
+
+  .landing-section {
+    padding: 55px 18px;
+  }
+
+  .landing-section-heading {
+    margin-bottom: 22px;
+  }
+
+  .landing-feature-grid {
+    gap: 10px;
+  }
+
+  .landing-feature {
+    padding: 19px;
+    border-radius: 17px;
+  }
+
+  .landing-feature p {
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .landing-voice-band {
+    margin: 0 13px;
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .landing-plan-card {
+    padding: 21px;
+    border-radius: 18px;
+  }
+
+  .landing-plan-cta {
+    min-height: 47px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+  }
+
+  .landing-faq-grid details {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .landing-faq-grid summary {
+    min-height: 24px;
+    padding-right: 28px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .landing-faq-grid details p {
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .landing-access {
+    gap: 20px;
+    padding: 48px 16px 52px;
+  }
+
+  .landing-access-intro h2 {
+    max-width: 13ch;
+    font-size: 31px;
+    line-height: 1.12;
+  }
+
+  .landing-access-intro > p {
+    font-size: 14px;
+  }
+
+  .landing-access-note {
+    margin-top: 17px;
+    padding: 12px;
+    font-size: 11px;
+  }
+
+  .landing-auth-card {
+    padding: 19px;
+    border-radius: 19px;
+  }
+
+  .landing-auth-card .profile-choices > button {
+    min-height: 88px;
+    padding: 13px 10px;
+    border-radius: 14px;
+  }
+
+  .landing-auth-card .account-auth-form label,
+  .landing-auth-card .demo-access label {
+    gap: 8px;
+    margin-bottom: 14px;
+    font-size: 12px;
+  }
+
+  .landing-auth-card .account-auth-form input,
+  .landing-auth-card .demo-access input {
+    height: 50px;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  .landing-auth-card .login-submit {
+    min-height: 52px;
+    border-radius: 13px;
+    font-size: 13px;
+  }
+
+  .landing-auth-card .auth-mode-toggle {
+    min-height: 44px;
+    font-size: 12px;
+  }
+
+  .landing-auth-card .test-access-note,
+  .landing-auth-card .login-note p {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .landing-final-cta {
+    margin: 0 13px;
+    padding: 42px 19px 44px;
+    border-radius: 20px;
+  }
+
+  .landing-final-cta > .landing-primary-cta {
+    min-height: 52px;
+    border-radius: 14px;
+    font-size: 13px;
+  }
+
+  .landing-footer {
+    padding-bottom: calc(22px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 380px) {
+  .landing-nav-inner {
+    padding-inline: 13px;
+  }
+
+  .landing-login-link {
+    display: none;
+  }
+
+  .landing-hero {
+    padding-inline: 16px;
+  }
+
+  .landing-hero h1 {
+    font-size: clamp(35px, 10vw, 40px);
+    letter-spacing: -1.6px;
+  }
+
+  .landing-auth-card {
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-feature,
+  .landing-plan-card,
+  .landing-nav-cta,
+  .landing-primary-cta,
+  .landing-plan-cta,
+  .landing-offer > button,
+  .landing-voice-band > button {
+    transition: none;
+  }
+}

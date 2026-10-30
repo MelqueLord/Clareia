@@ -3,6 +3,7 @@ import "./globals.css";
 import "./intelligence.css";
 import "./onboarding.css";
 import "./landing.css";
+import "./landing-mobile.css";
 import "./trial.css";
 import "./privacy.css";
 import "./support.css";
