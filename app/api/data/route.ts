@@ -54,12 +54,12 @@ export async function GET(req:Request){
  if(user.mustChangePassword)return reply({error:'Altere sua senha para continuar.',mustChangePassword:true,user:{id:user.authUserId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:false,mustChangePassword:true}},428);
  try{
   const access=user.isTest?demoAccess:await getAccountAccess(user.authUserId!);
-  if(!access.canUse)return reply({error:'Seu teste grátis terminou. Escolha um plano para continuar.',code:'TRIAL_EXPIRED',user:{id:user.userId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:user.isTest,mustChangePassword:user.mustChangePassword,isAdmin:!user.isTest&&isTrialAdmin(user.email)},access},402);
+  if(!access.canUse)return reply({error:'Seu teste grátis terminou. Escolha um plano para continuar.',code:'TRIAL_EXPIRED',user:{id:user.userId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:user.isTest,mustChangePassword:user.mustChangePassword,isAdmin:isTrialAdmin(user)},access},402);
   let row=await env.DB.prepare('SELECT payload,revision,updated_at FROM finance_documents WHERE user_id=?').bind(user.userId).first<{payload:string;revision:number;updated_at:string}>();
   if(!row&&'legacyUserId'in user&&typeof user.legacyUserId==='string'){await migrateLegacyUser(user.legacyUserId);row=await env.DB.prepare('SELECT payload,revision,updated_at FROM finance_documents WHERE user_id=?').bind(user.userId).first<{payload:string;revision:number;updated_at:string}>();}
   const audit=await env.DB.prepare('SELECT action,created_at FROM finance_audit WHERE user_id=? ORDER BY created_at DESC LIMIT 20').bind(user.userId).all();
   const data=row?scopedData(JSON.parse(row.payload) as FinanceData,user.defaultSpace):emptyData();
-  return reply({data,revision:row?.revision||0,updatedAt:row?.updated_at,user:{id:user.userId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:user.isTest,mustChangePassword:user.mustChangePassword,isAdmin:!user.isTest&&isTrialAdmin(user.email)},access,audit:audit.results});
+  return reply({data,revision:row?.revision||0,updatedAt:row?.updated_at,user:{id:user.userId,name:user.displayName,email:user.email,defaultSpace:user.defaultSpace,isTest:user.isTest,mustChangePassword:user.mustChangePassword,isAdmin:isTrialAdmin(user)},access,audit:audit.results});
  }catch{return reply({error:'Não foi possível carregar seus dados. Tente novamente.'},503);}
 }
 export async function POST(req:Request){

@@ -8,7 +8,7 @@ const reply = (body: unknown, status = 200) => Response.json(body, { status, hea
 const allowed = (req: Request) => !req.headers.get('origin') || req.headers.get('origin') === new URL(req.url).origin;
 async function authorizedAdmin(req: Request) {
   const user = await getFinanceUser(req);
-  return user && !user.isTest && !user.mustChangePassword && isTrialAdmin(user.email) ? user : null;
+  return user && !user.isTest && !user.mustChangePassword && isTrialAdmin(user) ? user : null;
 }
 
 export async function GET(req: Request) {

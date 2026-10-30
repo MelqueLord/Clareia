@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 
 import { FormEvent, useState } from 'react';
 import { ArrowRight, Compass, LockKeyhole } from 'lucide-react';
@@ -44,7 +45,7 @@ export default function FirstPasswordScreen({ onComplete, installPrompt, onInsta
 
   return <div className="first-password-shell">
     <section className="first-password-card">
-      <a className="first-password-brand" href="/"><span className="brand-mark"><Compass size={24}/></span><span>clareia<span className="brand-dot">.</span></span></a>
+      <Link className="first-password-brand" href="/"><span className="brand-mark"><Compass size={24}/></span><span>clareia<span className="brand-dot">.</span></span></Link>
       <span className="eyebrow">PROTEÇÃO DO SEU ACESSO</span>
       <h1>Defina sua senha pessoal.</h1>
       <p>A senha inicial libera apenas este primeiro acesso. Troque-a para abrir suas finanças e continuar com a Central de Inteligência.</p>

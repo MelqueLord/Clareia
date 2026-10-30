@@ -1,13 +1,18 @@
 'use client';
+import Link from 'next/link';
+import { clearAccountDrafts } from '../../lib/client-privacy';
+import { useRouter } from 'next/navigation';
 
 import { useState, type FormEvent } from 'react';
 import { AlertTriangle, ExternalLink, ShieldCheck, Trash2 } from 'lucide-react';
 
 type AccountPrivacyPanelProps = {
+  onDeleted: () => void;
   user: { id: string; email: string; isTest: boolean } | null;
 };
 
-export default function AccountPrivacyPanel({ user }: AccountPrivacyPanelProps) {
+export default function AccountPrivacyPanel({ user, onDeleted }: AccountPrivacyPanelProps) {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmed, setConfirmed] = useState(false);
@@ -35,8 +40,10 @@ export default function AccountPrivacyPanel({ user }: AccountPrivacyPanelProps) 
         throw new Error('Não foi possível excluir sua conta agora. Tente novamente.');
       }
 
-      localStorage.removeItem(`clareia-drafts:${user.id}`);
-      window.location.assign('/');
+      clearAccountDrafts(user.id);
+      onDeleted();
+      router.replace('/');
+      router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível excluir sua conta.');
       setBusy(false);
@@ -54,7 +61,7 @@ export default function AccountPrivacyPanel({ user }: AccountPrivacyPanelProps) 
           <p className="muted">Veja como usamos seus dados e controle sua conta.</p>
         </div>
       </div>
-      <a className="text-link privacy-policy-link" href="/privacidade">Ler a política de privacidade <ExternalLink size={14}/></a>
+      <Link className="text-link privacy-policy-link" href="/privacidade">Ler a política de privacidade <ExternalLink size={14}/></Link>
 
       {user.isTest ? (
         <p className="privacy-demo-note">Contas de demonstração usam dados fictícios compartilhados e não podem ser excluídas por este painel.</p>

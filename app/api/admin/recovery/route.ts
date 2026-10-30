@@ -9,7 +9,7 @@ const allowed = (req: Request) => !req.headers.get('origin') || req.headers.get(
 
 async function authorized(req: Request) {
   const user = await getFinanceUser(req);
-  return user && !user.isTest && !user.mustChangePassword && isTrialAdmin(user.email);
+  return user && !user.isTest && !user.mustChangePassword && isTrialAdmin(user);
 }
 
 export async function GET(req: Request) {

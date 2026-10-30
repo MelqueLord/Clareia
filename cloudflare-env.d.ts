@@ -7,8 +7,11 @@ declare namespace Cloudflare {
     BETTER_AUTH_SECRET?: string;
     BETTER_AUTH_URL?: string;
     AUTH_SIGNUP_ENABLED?: string;
+    AUTH_SIGNUP_POLICY?: string;
+    AUTH_SIGNUP_ALLOWED_EMAILS?: string;
     TRIAL_DURATION_DAYS?: string;
     TRIAL_ADMIN_EMAIL?: string;
+    TRIAL_ADMIN_USER_ID?: string;
     PILOT_MAX_ACCOUNTS?: string;
     RESEND_API_KEY?: string;
     RESEND_FROM_EMAIL?: string;

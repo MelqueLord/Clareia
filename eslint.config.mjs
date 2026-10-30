@@ -7,12 +7,18 @@ const eslintConfig = defineConfig([
   ...nextTs,
   globalIgnores([
     "dist/**",
+    ".test-build/**",
+    ".multitenant-build/**",
     ".vinext/**",
     ".wrangler/**",
     ".sites-runtime/**",
     "outputs/**",
     "work/**",
   ]),
+  {
+    files: ["tests/**/*.cjs"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
   {
     files: ["components/ui/**/*.{ts,tsx}", "hooks/use-mobile.ts"],
     rules: {

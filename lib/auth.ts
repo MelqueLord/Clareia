@@ -116,8 +116,15 @@ export const auth = betterAuth({
       ]);
 
       const queueForSupport = async () => {
-        await env.DB!.prepare('INSERT INTO verification(id,identifier,value,expires_at,created_at,updated_at) VALUES(?,?,?,?,?,?)')
-          .bind(crypto.randomUUID(), identifier, resetUrl.toString(), now + 60 * 60 * 1000, now, now).run();
+        // A slow failed delivery must not restore a superseded or already-used
+        // link to the support queue. Check the token atomically when inserting.
+        await env.DB!.prepare(`
+          INSERT INTO verification(id,identifier,value,expires_at,created_at,updated_at)
+          SELECT ?,?,?,?,?,?
+          WHERE EXISTS (SELECT 1 FROM verification WHERE identifier=? AND value=? AND expires_at>?)
+            AND NOT EXISTS (SELECT 1 FROM verification WHERE identifier=?)
+        `).bind(crypto.randomUUID(), identifier, resetUrl.toString(), now + 60 * 60 * 1000, now, now,
+          activeResetIdentifier, user.id, Date.now(), identifier).run();
       };
       const deliverOrQueue = async () => {
         const sent = await sendRecoveryEmail({ email: user.email, name: user.name || '', resetUrl: resetUrl.toString() });
@@ -158,7 +165,29 @@ export const auth = betterAuth({
           const adminEmail = (env.TRIAL_ADMIN_EMAIL || "").trim().toLowerCase();
           const email = data.email.trim().toLowerCase();
 
-          if (adminEmail && email === adminEmail) return { data };
+          if (adminEmail && email === adminEmail) {
+            throw new APIError("FORBIDDEN", {
+              message: "Este endereço está reservado. Use o acesso existente ou fale com o suporte.",
+            });
+          }
+
+          const signupPolicy = env.AUTH_SIGNUP_POLICY ?? "open";
+          if (signupPolicy !== "open" && signupPolicy !== "allowlist") {
+            throw new APIError("SERVICE_UNAVAILABLE", {
+              message: "O cadastro está temporariamente indisponível. Fale com o suporte.",
+            });
+          }
+          if (signupPolicy === "allowlist") {
+            const allowedEmails = (env.AUTH_SIGNUP_ALLOWED_EMAILS || "")
+              .split(/[,;\n\r]+/).map(value => value.trim().toLowerCase()).filter(Boolean);
+            const validList = allowedEmails.length > 0 && allowedEmails.length <= 1000 &&
+              allowedEmails.every(value => /^[^\s@,;*]+@[^\s@,;*]+\.[^\s@,;*]+$/.test(value));
+            if (!validList || !allowedEmails.includes(email)) {
+              throw new APIError("FORBIDDEN", {
+                message: "O cadastro da homologação está restrito aos participantes autorizados. Fale com o suporte.",
+              });
+            }
+          }
 
           const lockId = "pilot-signup-capacity";
           const now = new Date().toISOString();
@@ -173,8 +202,8 @@ export const auth = betterAuth({
 
           try {
             const accountCount = await env.DB.prepare(
-              "SELECT COUNT(*) AS total FROM user WHERE lower(email) <> ?",
-            ).bind(adminEmail).first<{ total: number }>();
+              "SELECT COUNT(*) AS total FROM user WHERE NOT (id = ? AND lower(email) = ?)",
+            ).bind(env.TRIAL_ADMIN_USER_ID?.trim() || "", adminEmail).first<{ total: number }>();
 
             if ((accountCount?.total || 0) >= limit) {
               throw new APIError("FORBIDDEN", {

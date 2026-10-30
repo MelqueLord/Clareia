@@ -1,6 +1,6 @@
 'use client';
 import {useState} from 'react';
-import {ArrowRight,CalendarDays,ShieldCheck,Sparkles,Target,Wallet,TrendingUp} from 'lucide-react';
+import {ArrowRight,CalendarDays,ShieldCheck,Target,Wallet,TrendingUp} from 'lucide-react';
 import type {Budget,FinanceData,Space} from '../../lib/model';
 import {cents,dateLabel,money,monthLabel} from '../../lib/model';
 import {availableToSpend,businessView,comparePurchase,weekSummary} from '../../lib/intelligence';

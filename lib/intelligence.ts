@@ -1,6 +1,6 @@
 import {addMonths,dateLabel,money} from './model';
 import type {FinanceData,Space} from './model';
-import {analyze,forecast,flows,spending,earmarked} from './engine';
+import {analyze,forecast,spending,earmarked} from './engine';
 import {goalSummary} from './savings';
 export function coverage(data:FinanceData,space:Space,asOf:string){const p=data.preferences[space];return !!(p.complete&&p.floor!==null&&p.monthlyGoalsReviewed&&p.checkedOn&&Date.parse(asOf)-Date.parse(p.checkedOn)<=7*86400000);}
 export function availableToSpend(data:FinanceData,space:Space,asOf:string){

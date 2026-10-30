@@ -105,7 +105,7 @@ export default function useSpeechCapture(onTranscript: (text: string) => void) {
     const token = session.current;
     setMessage('A gravação foi encerrada ao sair do app. A transcrição recebida foi mantida.');
     release(instance, token, true);
-  }, [clearStartupTimer, release]);
+  }, [release]);
 
   useEffect(() => {
     const onVisibilityChange = () => {
@@ -218,7 +218,7 @@ export default function useSpeechCapture(onTranscript: (text: string) => void) {
       setMessage('O navegador não conseguiu iniciar o microfone. Tente novamente ou digite sua frase.');
       release(instance, token, true);
     }
-  }, [release, stop]);
+  }, [clearStartupTimer, release, stop]);
 
   return { listening, message, setMessage, record };
 }

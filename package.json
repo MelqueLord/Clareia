@@ -11,7 +11,18 @@
     "build": "node scripts/run-framework.mjs build",
     "start": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "test": "node --test tests/run.cjs tests/intelligence.cjs tests/multitenant.cjs tests/admin.cjs tests/homologation.cjs tests/recovery.cjs tests/account-deletion.cjs tests/journey.cjs",
+    "test:admin": "node --test tests/admin.cjs",
+    "lint:tests": "eslint tests --max-warnings=0",
+    "typecheck": "tsc --noEmit --incremental false",
+    "check": "npm run lint -- --max-warnings=0 && npm test && npm run typecheck && npm run build",
+    "db:generate": "drizzle-kit generate",
+    "check:homologation": "npm run check && npm run db:rehearse",
+    "smoke:homologation": "node scripts/homologation-smoke.mjs",
+    "test:recovery": "node --test tests/recovery.cjs",
+    "test:deletion": "node --test tests/account-deletion.cjs",
+    "db:rehearse": "node scripts/database-rehearsal.mjs",
+    "test:journey": "node --test tests/journey.cjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

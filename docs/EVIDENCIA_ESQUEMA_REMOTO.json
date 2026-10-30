@@ -1,0 +1,54 @@
+{
+  "checkedAt": "2026-10-30T11:32:25.270Z",
+  "projectId": "appgprj_6ad911aedbc881918b5db462af24139d",
+  "binding": "DB",
+  "scope": "REMOTE_SCHEMA_COLUMNS_ONLY",
+  "exclusiveHomologationDatabaseConfirmed": false,
+  "migrationLedgerVerified": false,
+  "backupCreated": false,
+  "restorePerformed": false,
+  "tables": [
+    {
+      "table": "account_access",
+      "columns": [
+        "user_id",
+        "status",
+        "trial_started_at",
+        "trial_ends_at",
+        "billing_period_ends_at",
+        "provider_subscription_id",
+        "created_at",
+        "updated_at",
+        "subscription_requested_at",
+        "provider_customer_id",
+        "provider_payment_id"
+      ]
+    },
+    {
+      "table": "billing_events",
+      "columns": [
+        "id",
+        "event_type",
+        "provider_payment_id",
+        "provider_subscription_id",
+        "received_at",
+        "processed_at"
+      ]
+    },
+    {
+      "table": "user",
+      "columns": [
+        "id",
+        "name",
+        "email",
+        "email_verified",
+        "image",
+        "created_at",
+        "updated_at",
+        "space",
+        "must_change_password"
+      ]
+    }
+  ],
+  "method": "Overview nativo e consultas limitadas a uma linha para obter metadados das colunas; valores das linhas descartados, não armazenados nem exibidos."
+}

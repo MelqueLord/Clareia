@@ -76,18 +76,29 @@ function trailingNumberWords(before: string): string {
   return numeric.join(' ');
 }
 
+function addSpokenCents(amount: number | null, suffix: string): number | null {
+  if (amount === null || amount % 100 !== 0) return amount;
+  const match = suffix.match(/^\s+(?:e\s+)?(\d{1,2}|[a-z]+(?:\s+[a-z]+){0,7})\s+centavos?\b/i);
+  if (!match) return amount;
+  const cents = /^\d+$/.test(match[1]) ? Number(match[1]) : wordNumber(match[1]);
+  return cents !== null && cents >= 0 && cents < 100 ? amount + cents : amount;
+}
+
 function findAmount(text: string): number | null {
   const currency = text.match(/r\$\s*(\d[\d.,]*)/i);
-  if (currency) return numericMoney(currency[1]);
+  if (currency) {
+    const suffix = text.slice((currency.index ?? 0) + currency[0].length).replace(/^\s*(?:real|reais)\b/i, '');
+    return addSpokenCents(numericMoney(currency[1]), suffix);
+  }
 
-  const numericWithCurrency = text.match(/(\d[\d.,]*)\s*(?:reais?|conto?s?)\b/i);
-  if (numericWithCurrency) return numericMoney(numericWithCurrency[1]);
+  const numericWithCurrency = text.match(/(\d[\d.,]*)\s*(?:(?:real|reais)|conto?s?)\b/i);
+  if (numericWithCurrency) return addSpokenCents(numericMoney(numericWithCurrency[1]), text.slice((numericWithCurrency.index ?? 0) + numericWithCurrency[0].length));
 
-  const beforeCurrency = text.match(/\b(?:reais?|conto?s?)\b/i);
+  const beforeCurrency = text.match(/\b(?:(?:real|reais)|conto?s?)\b/i);
   if (beforeCurrency?.index !== undefined) {
     const words = trailingNumberWords(text.slice(0, beforeCurrency.index));
     const value = words ? wordNumber(words) : null;
-    if (value !== null) return value * 100;
+    if (value !== null) return addSpokenCents(value * 100, text.slice(beforeCurrency.index + beforeCurrency[0].length));
   }
 
   const command = text.match(/\b(?:recebi|receber|paguei|pagar|gastei|gastar|comprei|comprar|custou|custa|deu|salario|faturamento|renda|vendi|venda|separei|separar|reservei|reservar|liberei|liberar|transferi|transferir)\b\s+(?:r\$\s*)?(\d[\d.,]*)/i);
@@ -219,8 +230,10 @@ function parseOne(text: string, data: FinanceData, currentSpace: Space, asOf: st
   if (type === 'card_payment') paid = true;
 
   const accounts = data.accounts.filter(account => account.space === currentSpace && [account.name, account.bank].some(value => normalize(value).length > 2 && source.includes(normalize(value))));
-  const mentionedCards = data.cards.filter(card => card.space === currentSpace && source.includes(normalize(card.name)));
-  const genericCard = /\b(?:cartao|credito)\b/.test(source) && mentionedCards.length === 0
+  const cardIntent = type === 'card_payment' || type === 'card_debt' ||
+    /\b(?:cartao|credito)\b/.test(source) && !/\b(?:pix|debito)\b/.test(source);
+  const mentionedCards = cardIntent ? data.cards.filter(card => card.space === currentSpace && source.includes(normalize(card.name))) : [];
+  const genericCard = cardIntent && mentionedCards.length === 0
     ? data.cards.filter(card => card.space === currentSpace)
     : mentionedCards;
   const card = mentionedCards.length === 1 ? mentionedCards[0] : genericCard.length === 1 ? genericCard[0] : undefined;
@@ -244,7 +257,7 @@ function parseOne(text: string, data: FinanceData, currentSpace: Space, asOf: st
   if (!statusInferred) reviewHints.push(type === 'income' ? 'Confirme se a receita já entrou ou ainda vai entrar.' : 'Confirme se a despesa já foi paga ou ainda está pendente.');
   if (!naturalDate(dateText, asOf)) reviewHints.push('Não foi mencionada uma data; deixei hoje como padrão.');
   if (data.accounts.filter(item => item.space === currentSpace).length > 1 && !account) reviewHints.push('Escolha a conta ou o banco para este lançamento.');
-  if (/\b(?:cartao|credito)\b/.test(source) && !card && data.cards.filter(item => item.space === currentSpace).length > 1) reviewHints.push('Escolha qual cartão foi usado.');
+  if (cardIntent && !card && data.cards.filter(item => item.space === currentSpace).length > 1) reviewHints.push('Escolha qual cartão foi usado.');
   if (type === 'expense' && !paymentMethod) reviewHints.push('Confirme se pagou no Pix, débito ou crédito.');
 
   return {

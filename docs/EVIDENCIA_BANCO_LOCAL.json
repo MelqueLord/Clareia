@@ -1,0 +1,243 @@
+{
+  "scope": "LOCAL_SQLITE_SYNTHETIC_ONLY",
+  "remoteDatabaseVerified": false,
+  "startedAt": "2026-10-30T11:30:59.999Z",
+  "nodeVersion": "v24.19.0",
+  "checks": [
+    "9 migrações em ordem; dados anteriores preservados; defaults e colunas novas conferidos",
+    "backup SQLite criado pela API nativa; checksum SHA-256 registrado",
+    "restauração em novo arquivo: esquema, índices, contagens e hash de todas as linhas das 13 tabelas idênticos",
+    "backup adulterado recusado antes da importação; destino existente protegido contra sobrescrita",
+    "exclusão posterior ao backup reaplicada; sessões e tokens antigos invalidados; MEI preservado"
+  ],
+  "migrations": [
+    {
+      "file": "0000_mature_nextwave.sql",
+      "sha256": "95b669e8eec7a24cdad13086d2d885730cb114ab6c921bb5446443df9b8df681",
+      "applied": true
+    },
+    {
+      "file": "0001_sharp_white_queen.sql",
+      "sha256": "36b759ab2b73b8e7651a76fefd21b820393dbc2e4e52bf113eaff08bf54bd9fe",
+      "applied": true
+    },
+    {
+      "file": "0002_wonderful_iron_monger.sql",
+      "sha256": "ecfd8a16a437d37a5da6d59ee806b9c978cc9bab907bb5e79a54f01be2ed1277",
+      "applied": true
+    },
+    {
+      "file": "0003_large_mongu.sql",
+      "sha256": "9918e519ee33413bbc24d34873f069a0248dce965db8675d136c9c84def5418d",
+      "applied": true
+    },
+    {
+      "file": "0004_volatile_weapon_omega.sql",
+      "sha256": "6b73cd5fa1d46457e130232bfa893d22bbdedc4cb5427c8734e6c76d0c362431",
+      "applied": true
+    },
+    {
+      "file": "0005_absent_magdalene.sql",
+      "sha256": "0f77a1c712fae795710d8d0932bc9f9022d265dd59be755a0b7eb8b113afb88d",
+      "applied": true
+    },
+    {
+      "file": "0006_bitter_mulholland_black.sql",
+      "sha256": "b8ee0e59d3084c181dee1afb8b15c3e12b2103fa0bbfc9c5b7ec9c0c26d1510a",
+      "applied": true
+    },
+    {
+      "file": "0007_spicy_hemingway.sql",
+      "sha256": "d8cd9aab6922f52abae6a3c01677f98ec43f7c23d19fd3ad9366b38456e2ba51",
+      "applied": true
+    },
+    {
+      "file": "0008_tense_leopardon.sql",
+      "sha256": "60dd52e33b39264e9ee8a75b90469f982a6ecd1ab66d50d3f8c716cf6accd165",
+      "applied": true
+    }
+  ],
+  "limitations": [
+    "Não executa D1 remoto, Time Travel, autenticação, envio de e-mail ou recuperação de credenciais.",
+    "Backup em arquivo SQLite é somente deste ensaio; D1 exige exportação/importação SQL.",
+    "Não comprova backup externo nem política de retenção."
+  ],
+  "beforeBackup": {
+    "schemaSha256": "19e3278ca1fc1709740e91577704ffe2324ef7e28169b629824228e0333c76bd",
+    "tables": {
+      "account": {
+        "rows": 2,
+        "sha256": "e991bdabd99fcc729d850a98b5e876c8aa3d4c9c23fa599336f055f2e03385d4"
+      },
+      "account_access": {
+        "rows": 2,
+        "sha256": "0d2f4a81646b33f820b407c036fd703e9e18a0dfe7dec6d1652c87f2cd78bece"
+      },
+      "billing_events": {
+        "rows": 2,
+        "sha256": "8d1ed1f3d5530c9076f858ccfb3831642ebbbdbd5e032e5545009f8d95080b7e"
+      },
+      "finance_audit": {
+        "rows": 2,
+        "sha256": "f72319143549a308917d6e611818d2839a62cb3b4f9e1377be1e384cbac8224a"
+      },
+      "finance_documents": {
+        "rows": 2,
+        "sha256": "8360b2e5e6a372a7b466b7670872890f78803bfb59d17471214958fde4ce79a2"
+      },
+      "finance_snapshots": {
+        "rows": 2,
+        "sha256": "9341a957ca02edae960a45ec63463b749b53c61a2acae6314474785ce629438f"
+      },
+      "job_locks": {
+        "rows": 2,
+        "sha256": "cef374cb5d3d7f5aaed6f467ca98e1c0c6603f4bd4bcd22e5dc485a57916e1ba"
+      },
+      "push_subscriptions": {
+        "rows": 2,
+        "sha256": "008091d2fb0eac9c3f0532631ac623df457d75e7e70705b5c6f56f616f6fd7a7"
+      },
+      "rate_limit": {
+        "rows": 2,
+        "sha256": "db83edac6289a88ba767de3f96668e519d3528d075d7f92a264fd922be645c06"
+      },
+      "session": {
+        "rows": 2,
+        "sha256": "2da4c0aef0f46a7ea3977181d18747e76d268c5a7365af3efc659d72834749f2"
+      },
+      "test_sessions": {
+        "rows": 2,
+        "sha256": "3b7f448a4a2482574ecb8b2b31d3cccb6a5d4e5085c4bdab30a60a48f54da08d"
+      },
+      "user": {
+        "rows": 2,
+        "sha256": "091fd7f245527b6dbfb2fe43f251bfe8b8bdd113fb374e506624edd6e6ee4649"
+      },
+      "verification": {
+        "rows": 2,
+        "sha256": "8fb3ab9f491bc4c294e312de62b2c96ce710a3b07e040e49baf6af8ea78442c4"
+      }
+    }
+  },
+  "backup": {
+    "file": "backup.sqlite",
+    "bytes": 192512,
+    "sha256": "6eb9482bcd726dd979400e83040d348f9033fd7eb41712c1b4ed9df422c30def"
+  },
+  "restored": {
+    "schemaSha256": "19e3278ca1fc1709740e91577704ffe2324ef7e28169b629824228e0333c76bd",
+    "tables": {
+      "account": {
+        "rows": 2,
+        "sha256": "e991bdabd99fcc729d850a98b5e876c8aa3d4c9c23fa599336f055f2e03385d4"
+      },
+      "account_access": {
+        "rows": 2,
+        "sha256": "0d2f4a81646b33f820b407c036fd703e9e18a0dfe7dec6d1652c87f2cd78bece"
+      },
+      "billing_events": {
+        "rows": 2,
+        "sha256": "8d1ed1f3d5530c9076f858ccfb3831642ebbbdbd5e032e5545009f8d95080b7e"
+      },
+      "finance_audit": {
+        "rows": 2,
+        "sha256": "f72319143549a308917d6e611818d2839a62cb3b4f9e1377be1e384cbac8224a"
+      },
+      "finance_documents": {
+        "rows": 2,
+        "sha256": "8360b2e5e6a372a7b466b7670872890f78803bfb59d17471214958fde4ce79a2"
+      },
+      "finance_snapshots": {
+        "rows": 2,
+        "sha256": "9341a957ca02edae960a45ec63463b749b53c61a2acae6314474785ce629438f"
+      },
+      "job_locks": {
+        "rows": 2,
+        "sha256": "cef374cb5d3d7f5aaed6f467ca98e1c0c6603f4bd4bcd22e5dc485a57916e1ba"
+      },
+      "push_subscriptions": {
+        "rows": 2,
+        "sha256": "008091d2fb0eac9c3f0532631ac623df457d75e7e70705b5c6f56f616f6fd7a7"
+      },
+      "rate_limit": {
+        "rows": 2,
+        "sha256": "db83edac6289a88ba767de3f96668e519d3528d075d7f92a264fd922be645c06"
+      },
+      "session": {
+        "rows": 2,
+        "sha256": "2da4c0aef0f46a7ea3977181d18747e76d268c5a7365af3efc659d72834749f2"
+      },
+      "test_sessions": {
+        "rows": 2,
+        "sha256": "3b7f448a4a2482574ecb8b2b31d3cccb6a5d4e5085c4bdab30a60a48f54da08d"
+      },
+      "user": {
+        "rows": 2,
+        "sha256": "091fd7f245527b6dbfb2fe43f251bfe8b8bdd113fb374e506624edd6e6ee4649"
+      },
+      "verification": {
+        "rows": 2,
+        "sha256": "8fb3ab9f491bc4c294e312de62b2c96ce710a3b07e040e49baf6af8ea78442c4"
+      }
+    }
+  },
+  "afterQuarantine": {
+    "schemaSha256": "19e3278ca1fc1709740e91577704ffe2324ef7e28169b629824228e0333c76bd",
+    "tables": {
+      "account": {
+        "rows": 1,
+        "sha256": "5423f2fffee52ac5e16f820904ecbb066db89fa4a1b996ec18cda602ffd28d10"
+      },
+      "account_access": {
+        "rows": 1,
+        "sha256": "becc98441b5dc79a64eb86dcff5121c1a68847647acad586218193599f67dc5e"
+      },
+      "billing_events": {
+        "rows": 2,
+        "sha256": "8d1ed1f3d5530c9076f858ccfb3831642ebbbdbd5e032e5545009f8d95080b7e"
+      },
+      "finance_audit": {
+        "rows": 1,
+        "sha256": "fb09b413831466a51bd34975c0951ed1f2a349c4cd4280fafd96c76f1edd171b"
+      },
+      "finance_documents": {
+        "rows": 1,
+        "sha256": "88281c683c8b1d6e8f4ea427eb20c2383bc9667f19c8caa45ec687265af8a812"
+      },
+      "finance_snapshots": {
+        "rows": 1,
+        "sha256": "83fe905f4ca87f0daaa4e4b15f9c4849c5b0807047da841f94e45ed49c551e8e"
+      },
+      "job_locks": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "push_subscriptions": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "rate_limit": {
+        "rows": 2,
+        "sha256": "db83edac6289a88ba767de3f96668e519d3528d075d7f92a264fd922be645c06"
+      },
+      "session": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "test_sessions": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "user": {
+        "rows": 1,
+        "sha256": "fca71cd217a2e78288fdd0ae1d8727b69df88b34c322ed5008277298b153038a"
+      },
+      "verification": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    }
+  },
+  "status": "PASSED_LOCAL_ONLY",
+  "finishedAt": "2026-10-30T11:31:00.139Z"
+}

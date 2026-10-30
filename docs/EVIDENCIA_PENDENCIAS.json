@@ -1,0 +1,25 @@
+{
+  "checkedAt": "2026-10-30T11:53:57.610Z",
+  "checks": {
+    "gateExitCode": 0,
+    "totalTests": 78,
+    "failed": 0,
+    "skipped": 0,
+    "localDatabaseDrill": "PASSED_LOCAL_ONLY"
+  },
+  "sourcePublication": {
+    "completed": false,
+    "blocker": "Could not resolve host: git.chatgpt-team.site"
+  },
+  "runtimePublication": {
+    "deploymentId": "appgdep_6ae48527bc888191ab1290d36791f243",
+    "status": "succeeded",
+    "version": 72,
+    "envRevision": 12,
+    "url": "https://clareia-financas-mei-pf.igrejamirc01.chatgpt.site",
+    "authSignupEnabled": "false",
+    "updatedAt": "2026-10-30T11:53:30.254830+00:00"
+  },
+  "browserJourneyVerified": false,
+  "remoteBackupRestoreVerified": false
+}

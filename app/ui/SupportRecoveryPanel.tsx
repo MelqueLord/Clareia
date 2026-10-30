@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, type ChangeEvent } from 'react';
-import { Download, LifeBuoy, Mail, RotateCcw, ShieldCheck, Upload } from 'lucide-react';
+import { Download, LifeBuoy, Mail, ShieldCheck, Upload } from 'lucide-react';
 import type { FinanceData, Space } from '../../lib/model';
 import { emptyData } from '../../lib/model';
 import { dataSchema } from '../../lib/validation';

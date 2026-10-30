@@ -4,13 +4,32 @@ PWA com projeções financeiras, alertas explicados, registro por voz e compara�
 
 - Aplicativo: https://clareia-financas-mei-pf.igrejamirc01.chatgpt.site
 - Escopo atual: [Evolução v2](EVOLUCAO_V2.md).
-- Usuários fictícios: pf@teste.clareia.app e mei@teste.clareia.app, senha pública Clareia2026!. Use somente dados fictícios nessas contas compartilhadas.
-- Login individual: botão de entrada com ChatGPT, gerenciado pela hospedagem.
-- Testes: node tests/run.cjs
+- Login individual: e-mail e senha pelo Better Auth; contas PF e MEI independentes. O acesso compartilhado de demonstração foi encerrado.
+- Testes: `npm test`.
+- Verificação antes da publicação: `npm run check` (lint geral sem avisos, suíte, tipagem e build).
+- Cobertura e limites: [Testes e validação](docs/TESTES.md).
 - Desenvolvimento: npm run dev
 - Build: npm run build
 - Integração de pagamentos: [docs/ASAAS.md](docs/ASAAS.md)
 - Publicação com domínio/infraestrutura Hostinger: [deploy/hostinger/README.md](deploy/hostinger/README.md)
+
+## Homologação
+
+- Auditoria e bloqueios atuais: [AUDITORIA_HOMOLOGACAO.md](docs/AUDITORIA_HOMOLOGACAO.md).
+- Roteiro e matriz de aceite: [HOMOLOGACAO.md](docs/HOMOLOGACAO.md).
+- Gate completo: `npm run check:homologation` (inclui lint geral sem avisos, testes, tipagem, build e ensaio local do banco).
+- Verificação HTTP anônima: `npm run smoke:homologation -- https://endereco`.
+- Jornada com autenticação real em SQLite: `npm run test:journey` (não substitui o navegador publicado).
+- Cadastro fechado por participantes: `AUTH_SIGNUP_POLICY=allowlist` e `AUTH_SIGNUP_ALLOWED_EMAILS` no painel seguro; global `AUTH_SIGNUP_ENABLED` continua prevalecendo.
+- Exclusão sem acesso à conta: página `/excluir-conta` na próxima publicação; opção de solicitação por e-mail.
+- Estado da entrega: [PENDENCIAS_IMPLEMENTADAS.md](docs/PENDENCIAS_IMPLEMENTADAS.md).
+- Variáveis de referência: [deploy/homologation/env.example](deploy/homologation/env.example).
+
+## Administração
+
+O acesso administrativo exige `TRIAL_ADMIN_USER_ID` e `TRIAL_ADMIN_EMAIL`, configurados pelo operador após conferir a identidade da conta. Sem ambos, as rotas administrativas ficam bloqueadas. Consulte [configuração segura do administrador](docs/ADMIN.md).
+
+Validação da autorização: `npm run test:admin`.
 
 ## Infraestrutura do projeto
 
@@ -147,3 +166,7 @@ The portable build runs Vinext directly without a host `timeout` command. The ma
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)
 - [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+
+## Recuperação por e-mail
+
+O código de recuperação e os testes com Better Auth real estão documentados em [RECUPERACAO_EMAIL.md](docs/RECUPERACAO_EMAIL.md). Execute `npm run test:recovery`. O envio para a caixa de entrada depende da conta Resend, domínio verificado, credenciais na hospedagem e publicação da versão corrigida.

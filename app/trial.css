@@ -55,3 +55,5 @@
 .trial-admin-message.error{color:#b84a3c}
 @media(max-width:900px){.trial-admin-row{grid-template-columns:minmax(170px,1fr) minmax(145px,.8fr)}.trial-admin-actions{grid-column:1/-1;justify-content:flex-start}}
 @media(max-width:600px){.trial-admin-heading{align-items:flex-start}.trial-admin-heading p{font-size:10px}.trial-admin-row{grid-template-columns:1fr;gap:10px}.trial-admin-actions{grid-column:auto}.trial-admin-actions .button{flex:1;justify-content:center}}
+
+.trial-gate-card>.privacy-account-card{margin-top:24px;padding:20px;border-top:1px solid #e1e9df}.trial-gate-card .privacy-account-heading h2{font-size:17px;letter-spacing:-.4px}@media(max-width:600px){.trial-gate-card>.privacy-account-card{padding:18px 12px}}

@@ -1,99 +1,15 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const ts = require('typescript');
 const assert = require('node:assert/strict');
-const { DatabaseSync } = require('node:sqlite');
-const Module = require('node:module');
-const { randomBytes } = require('node:crypto');
+const { test } = require('node:test');
+const { createRuntime, request } = require('./helpers/runtime.cjs');
 
-const root = path.resolve(__dirname, '..');
-const out = path.join(root, '.multitenant-build');
-fs.rmSync(out, { recursive: true, force: true });
-fs.mkdirSync(out, { recursive: true });
-fs.writeFileSync(path.join(out, 'package.json'), '{"type":"commonjs"}');
-
-for (const file of ['lib/model.ts', 'lib/validation.ts', 'lib/session.ts', 'app/api/data/route.ts']) {
-  const destination = path.join(out, file.replace(/\.ts$/, '.js'));
-  fs.mkdirSync(path.dirname(destination), { recursive: true });
-  fs.writeFileSync(destination, ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText);
+function setup(t) {
+  const rt = createRuntime();
+  t.after(() => rt.close());
+  return rt;
 }
 
-const sql = new DatabaseSync(':memory:');
-for (const file of fs.readdirSync(path.join(root, 'drizzle')).filter(file => file.endsWith('.sql')).sort()) {
-  sql.exec(fs.readFileSync(path.join(root, 'drizzle', file), 'utf8'));
-}
-
-const env = { DB: {
-  prepare(query) {
-    let args = [];
-    return {
-      bind(...values) { args = values; return this; },
-      async first() { return sql.prepare(query).get(...args) || null; },
-      async all() { return { results: sql.prepare(query).all(...args) }; },
-      async run() { return { meta: { changes: sql.prepare(query).run(...args).changes } }; },
-    };
-  },
-  async batch(statements) {
-    sql.exec('BEGIN');
-    try {
-      const results = [];
-      for (const statement of statements) results.push(await statement.run());
-      sql.exec('COMMIT');
-      return results;
-    } catch (error) {
-      sql.exec('ROLLBACK');
-      throw error;
-    }
-  },
-} };
-
-const originalLoad = Module._load;
-Module._load = function (name, ...rest) {
-  if (name === 'cloudflare:workers') return { env };
-  if (name === './auth') return { auth: { api: { getSession: async () => null } } };
-  return originalLoad.call(this, name, ...rest);
-};
-
-async function main() {
-  const { emptyData } = require('../.multitenant-build/lib/model');
-  const { tokenHash } = require('../.multitenant-build/lib/session');
-  const api = require('../.multitenant-build/app/api/data/route');
-  const now = new Date().toISOString();
-  const sessions = [];
-  for (const [id, name] of [['customer-a', 'Cliente A'], ['customer-b', 'Cliente B']]) {
-    const token = randomBytes(32).toString('hex');
-    sessions.push(token);
-    await env.DB.prepare('INSERT INTO test_sessions(token_hash,user_id,display_name,email,space,expires_at) VALUES(?,?,?,?,?,?)')
-      .bind(await tokenHash(token), id, name, `${id}@example.test`, 'pf', new Date(Date.now() + 3600000).toISOString()).run();
-  }
-
-  const request = (token, method = 'GET', body) => new Request('https://clareia.test/api/data', {
-    method,
-    headers: { origin: 'https://clareia.test', cookie: `clareia_session=${token}`, 'content-type': 'application/json' },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const [tokenA, tokenB] = sessions;
-  const [readA, readB] = await Promise.all([api.GET(request(tokenA)), api.GET(request(tokenB))]);
-  const accountA = await readA.json();
-  const accountB = await readB.json();
-  assert.notEqual(accountA.user.id, accountB.user.id);
-
-  for (const [token, account, incomeSource] of [[tokenA, accountA, 'Renda da Cliente A'], [tokenB, accountB, 'Renda do Cliente B']]) {
-    const data = emptyData();
-    data.profiles.pf.incomeSource = incomeSource;
-    const response = await api.POST(request(token, 'POST', {
-      data, revision: account.revision, mutationId: crypto.randomUUID(), action: 'settings',
-    }));
-    assert.equal(response.status, 200);
-  }
-
-  const [savedA, savedB] = await Promise.all([api.GET(request(tokenA)), api.GET(request(tokenB))]);
-  assert.equal((await savedA.json()).data.profiles.pf.incomeSource, 'Renda da Cliente A');
-  assert.equal((await savedB.json()).data.profiles.pf.incomeSource, 'Renda do Cliente B');
-  assert.equal(sql.prepare('SELECT COUNT(*) AS count FROM finance_documents').get().count, 2);
-
+test('migrações criam todos os índices usados nas consultas multiusuário', t => {
+  const { sql } = setup(t);
   for (const [table, expected] of [
     ['finance_snapshots', 'finance_snapshots_user_created_idx'],
     ['finance_audit', 'finance_audit_user_created_idx'],
@@ -107,15 +23,55 @@ async function main() {
     const indexes = sql.prepare(`PRAGMA index_list('${table}')`).all().map(row => row.name);
     assert.ok(indexes.includes(expected), `Índice ausente: ${expected}`);
   }
+});
 
-  console.log('PASS migrações e índices para consultas multiusuário');
-  console.log('PASS isolamento de dados financeiros entre dois clientes');
-}
+test('clientes individuais PF e MEI salvam em paralelo sem compartilhar dados', async t => {
+  const rt = setup(t), api = rt.loadSource('app/api/data/route.ts');
+  const { emptyData } = rt.loadSource('lib/model.ts');
+  const clients = [rt.createSession({ id: 'customer-a' }), rt.createSession({ id: 'customer-b' }), rt.createSession({ id: 'customer-mei', space: 'mei' })];
+  const reads = await Promise.all(clients.map(client => api.GET(request('data', { cookie: client.cookie }))));
+  for (const response of reads) assert.equal(response.status, 200);
+  const accounts = await Promise.all(reads.map(response => response.json()));
+  assert.equal(new Set(accounts.map(account => account.user.id)).size, 3);
+  const saves = await Promise.all(clients.map((client, index) => {
+    const data = emptyData();
+    data.accounts = [{ id: 'same-local-id', name: client.id, bank: 'Teste', space: client.space, balance: 10000 + index, openingDate: '2026-10-01' }];
+    return api.POST(request('data', { method: 'POST', cookie: client.cookie, body: { data, revision: accounts[index].revision, mutationId: crypto.randomUUID(), action: 'settings' } }));
+  }));
+  for (const response of saves) assert.equal(response.status, 200);
+  for (const [index, client] of clients.entries()) {
+    const saved = await (await api.GET(request('data', { cookie: client.cookie }))).json();
+    assert.equal(saved.data.accounts.length, 1);
+    assert.equal(saved.data.accounts[0].name, client.id);
+    assert.equal(saved.data.accounts[0].space, client.space);
+    assert.equal(saved.data.accounts[0].balance, 10000 + index);
+  }
+  assert.equal(rt.sql.prepare('SELECT COUNT(*) AS n FROM finance_documents').get().n, 3);
+});
 
-main().catch(error => {
-  console.error(error);
-  process.exitCode = 1;
-}).finally(() => {
-  sql.close();
-  fs.rmSync(out, { recursive: true, force: true });
+test('identidade enviada no corpo não substitui o dono autenticado do documento', async t => {
+  const rt = setup(t), api = rt.loadSource('app/api/data/route.ts');
+  const owner = rt.createSession({ id: 'owner' }), attacker = rt.createSession({ id: 'attacker' });
+  const data = rt.loadSource('lib/model.ts').emptyData();
+  data.profiles.pf.incomeSource = 'Conteúdo do solicitante';
+  const response = await api.POST(request('data', { method: 'POST', cookie: attacker.cookie, body: {
+    userId: owner.userId, authUserId: owner.id, data, revision: 0, mutationId: crypto.randomUUID(), action: 'settings',
+  } }));
+  assert.equal(response.status, 200);
+  assert.equal(rt.sql.prepare('SELECT COUNT(*) AS n FROM finance_documents WHERE user_id=?').get(owner.userId).n, 0);
+  assert.equal(rt.sql.prepare('SELECT COUNT(*) AS n FROM finance_documents WHERE user_id=?').get(attacker.userId).n, 1);
+});
+
+test('duas gravações da mesma revisão preservam apenas uma alteração', async t => {
+  const rt = setup(t), api = rt.loadSource('app/api/data/route.ts');
+  const { cookie } = rt.createSession();
+  const { emptyData } = rt.loadSource('lib/model.ts');
+  const responses = await Promise.all(['Primeira alteração', 'Segunda alteração'].map(incomeSource => {
+    const data = emptyData(); data.profiles.pf.incomeSource = incomeSource;
+    return api.POST(request('data', { method: 'POST', cookie, body: { data, revision: 0, mutationId: crypto.randomUUID(), action: 'settings' } }));
+  }));
+  assert.deepEqual(responses.map(response => response.status).sort(), [200, 409]);
+  assert.equal(rt.sql.prepare('SELECT COUNT(*) AS n FROM finance_documents').get().n, 1);
+  assert.equal(rt.sql.prepare('SELECT COUNT(*) AS n FROM finance_audit').get().n, 1);
+  assert.equal(rt.sql.prepare('SELECT revision FROM finance_documents').get().revision, 1);
 });

@@ -19,6 +19,20 @@ type RecoveryRow = { id: string; resetUrl: string; expiresAt: number; requestedA
 const when = (value: number | null) => value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(value)) : 'Ainda não começou';
 const statusLabel = (status: AccountRow['status']) => status === 'active' ? 'Ativa' : status === 'trialing' ? 'Em teste' : status === 'expired' ? 'Bloqueada' : status === 'past_due' ? 'Pagamento pendente' : status === 'canceled' ? 'Cancelada' : 'Aguardando primeiro acesso';
 
+async function fetchAccounts() {
+  const response = await fetch('/api/admin/access', { cache: 'no-store' });
+  const result = await response.json() as { accounts?: AccountRow[]; error?: string };
+  if (!response.ok) throw new Error(result.error || 'Não foi possível carregar os acessos.');
+  return result.accounts || [];
+}
+
+async function fetchRecoveries() {
+  const response = await fetch('/api/admin/recovery', { cache: 'no-store' });
+  const result = await response.json() as { requests?: RecoveryRow[]; emailDeliveryConfigured?: boolean; error?: string };
+  if (!response.ok) throw new Error(result.error || 'Não foi possível carregar as recuperações.');
+  return result;
+}
+
 export default function TrialManagementPanel() {
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,10 +48,7 @@ export default function TrialManagementPanel() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/admin/access', { cache: 'no-store' });
-      const result = await response.json() as { accounts?: AccountRow[]; error?: string };
-      if (!response.ok) throw new Error(result.error || 'Não foi possível carregar os acessos.');
-      setAccounts(result.accounts || []);
+      setAccounts(await fetchAccounts());
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível carregar os acessos.');
     } finally {
@@ -48,12 +59,11 @@ export default function TrialManagementPanel() {
   async function refreshRecoveries() {
     setRecoveryLoading(true);
     try {
-      const response = await fetch('/api/admin/recovery', { cache: 'no-store' });
-      const result = await response.json() as { requests?: RecoveryRow[]; emailDeliveryConfigured?: boolean };
-      if (response.ok) {
-        setRecoveries(result.requests || []);
-        setRecoveryEmailConfigured(Boolean(result.emailDeliveryConfigured));
-      }
+      const result = await fetchRecoveries();
+      setRecoveries(result.requests || []);
+      setRecoveryEmailConfigured(Boolean(result.emailDeliveryConfigured));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Não foi possível carregar as recuperações.');
     } finally { setRecoveryLoading(false); }
   }
 
@@ -91,7 +101,19 @@ export default function TrialManagementPanel() {
     }
   }
 
-  useEffect(() => { void refresh(); void refreshRecoveries(); }, []);
+  useEffect(() => {
+    let active = true;
+    void fetchAccounts().then(result => { if (active) setAccounts(result); })
+      .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : 'Não foi possível carregar os acessos.'); })
+      .finally(() => { if (active) setLoading(false); });
+    void fetchRecoveries().then(result => {
+      if (!active) return;
+      setRecoveries(result.requests || []);
+      setRecoveryEmailConfigured(Boolean(result.emailDeliveryConfigured));
+    }).catch(cause => { if (active) setError(cause instanceof Error ? cause.message : 'Não foi possível carregar as recuperações.'); })
+      .finally(() => { if (active) setRecoveryLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   return <section className="panel trial-admin">
     <div className="trial-admin-heading"><div><span className="trial-admin-icon"><ShieldCheck size={19}/></span><div><h2>Controle de testes e assinaturas</h2><p>Gerencie os acessos sem visualizar os dados financeiros das pessoas.</p></div></div><button className="icon-button" aria-label="Atualizar lista de contas" disabled={loading} onClick={()=>void refresh()}><RefreshCw size={16}/></button></div>

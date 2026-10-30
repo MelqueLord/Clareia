@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { AlertTriangle, Check, FileUp, LoaderCircle, Trash2 } from 'lucide-react';
 import type { Card, FinanceData, Space, Transaction } from '../../lib/model';
 import { categoriesFor, cents, id, withDay } from '../../lib/model';
@@ -131,8 +131,8 @@ export default function CardStatementImport({ cards, space, data, asOf, saving, 
   const card = cards.find(item => item.id === cardId);
   const categories = categoriesFor(space, 'expense');
   const dueDate = card ? withDay(`${statementMonth}-01`, card.dueDay) : `${statementMonth}-01`;
-  const existingRows = useMemo(() => card ? invoiceRows(data, card.id, statementMonth) : [], [card, data, statementMonth]);
-  const duplicateIds = useMemo(() => {
+  const existingRows = card ? invoiceRows(data, card.id, statementMonth) : [];
+  const duplicateIds = (() => {
     const found = new Map<string, string>();
     rows.forEach((row, index) => {
       const match = existingRows.find(existing => {
@@ -144,7 +144,7 @@ export default function CardStatementImport({ cards, space, data, asOf, saving, 
       else if (sameFile) found.set(row.id, `linha repetida · ${sameFile.description}`);
     });
     return found;
-  }, [rows, existingRows, data.transactions]);
+  })();
   const selectedRows = rows.filter(row => row.selected && (!duplicateIds.has(row.id) || row.allowDuplicate)).length;
 
   async function readPdf(file: File) {
@@ -159,9 +159,10 @@ export default function CardStatementImport({ cards, space, data, asOf, saving, 
       const worker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
       pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const pdf = await pdfjs.getDocument({ data: bytes, isEvalSupported: false }).promise;
+      const loadingTask = pdfjs.getDocument({ data: bytes });
       let parsed: ImportRow[] = [];
       try {
+        const pdf = await loadingTask.promise;
         if (pdf.numPages > 40) throw new Error('O PDF precisa ter até 40 páginas.');
         const lines: string[] = [];
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
@@ -171,7 +172,7 @@ export default function CardStatementImport({ cards, space, data, asOf, saving, 
         }
         parsed = parseRows(lines, statementMonth, categories);
       } finally {
-        await pdf.destroy();
+        await loadingTask.destroy();
       }
       if (!parsed.length) throw new Error('Não encontrei compras legíveis. Este PDF pode ser digitalizado ou usar um formato ainda não reconhecido.');
       if (parsed.length > 300) throw new Error('Encontrei mais de 300 linhas candidatas. Selecione uma única fatura em PDF e tente novamente.');

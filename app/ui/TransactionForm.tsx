@@ -147,7 +147,6 @@ export default function TransactionForm({ data, space, asOf, tx, voice, initialT
   const showRecurringSuggestion = !tx && !voice && !!recurringExample;
   const lastInstallmentDue = due && installments > 0 ? addMonths(due, installments - 1) : '';
   const investmentPlan = (data.investmentPlans || []).find(plan => plan.space === selectedSpace && plan.incomeCategory === category);
-  const displayDate = (value: string) => value ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
 
   function chooseCategory(nextCategory: string) {
     setCategory(nextCategory);

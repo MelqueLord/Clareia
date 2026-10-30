@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import useBrowserEnvironment from '../../hooks/use-browser-environment';
 import { Check, Download, Share2, Smartphone } from 'lucide-react';
 
 type InstallPrompt = {
@@ -17,24 +18,11 @@ export default function InstallAppCard({
   onPromptUsed: () => void;
   variant?: 'login' | 'settings';
 }) {
-  const [ios, setIos] = useState(false);
-  const [android, setAndroid] = useState(false);
-  const [installed, setInstalled] = useState(false);
+  const { ios, android, installed: installedInBrowser } = useBrowserEnvironment();
+  const [installationAccepted, setInstallationAccepted] = useState(false);
+  const installed = installedInBrowser || installationAccepted;
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    const standalone = window.matchMedia('(display-mode: standalone)').matches
-      || (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    const platform = navigator as Navigator & { userAgentData?: { platform?: string } };
-    setInstalled(standalone);
-    setAndroid(/Android/i.test(navigator.userAgent));
-    setIos(/iPhone|iPad|iPod/i.test(navigator.userAgent)
-      || (platform.userAgentData?.platform === 'iOS')
-      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
-    const onInstalled = () => setInstalled(true);
-    window.addEventListener('appinstalled', onInstalled);
-    return () => window.removeEventListener('appinstalled', onInstalled);
-  }, []);
 
   async function install() {
     if (!prompt) return;
@@ -45,7 +33,7 @@ export default function InstallAppCard({
       setMessage(choice.outcome === 'accepted'
         ? 'Clareia adicionado à tela inicial.'
         : 'Você pode adicionar o Clareia depois pelo menu do navegador.');
-      if (choice.outcome === 'accepted') setInstalled(true);
+      if (choice.outcome === 'accepted') setInstallationAccepted(true);
     } catch {
       onPromptUsed();
       setMessage('Use o menu do navegador para adicionar o Clareia à tela inicial.');
