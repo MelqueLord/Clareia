@@ -10,6 +10,7 @@ type InstallPrompt = { prompt: () => Promise<void>; userChoice: Promise<{ outcom
 
 export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: { onLogin: () => void; installPrompt: InstallPrompt | null; onInstallUsed: () => void }) {
   const [profile, setProfile] = useState<Space>('pf');
+  const [demoView, setDemoView] = useState<'budget' | 'margin' | 'change'>('budget');
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -108,23 +109,39 @@ export default function LoginScreen({ onLogin, installPrompt, onInstallUsed }: {
     <main className="landing-main">
       <section className="landing-hero">
         <div className="landing-hero-copy">
-          <span className="landing-eyebrow"><Sparkles size={14}/> MAIS CLAREZA PARA DECIDIR SOBRE O SEU DINHEIRO</span>
-          <h1>Entenda seu mês antes que ele termine.</h1>
-          <p className="landing-hero-lead">Veja o que entra, o que sai e o que ainda vem pela frente. Registre por voz ou texto, importe extratos e faturas em PDFs compatíveis e revise tudo antes de salvar.</p>
+          <span className="landing-eyebrow"><Sparkles size={14}/> SUA CENTRAL DE INTELIGÊNCIA FINANCEIRA</span>
+          <h1>Saiba quando seguir, ajustar ou guardar.</h1>
+          <p className="landing-hero-lead">A Central de Inteligência Clareia transforma seus registros em orientação prática: acompanhe seu orçamento, entenda o que ainda cabe no mês e encontre espaço para economizar sem perder seus planos de vista.</p>
           <div className="landing-hero-actions"><button type="button" className="landing-primary-cta" onClick={() => startTrial()}><Mic size={17}/> Começar grátis por 7 dias <ArrowRight size={17}/></button><a href="#como-funciona" className="landing-text-cta">Descobrir como funciona <ArrowUpRight size={15}/></a></div>
           <div className="landing-trust-note"><ShieldCheck size={17}/><span>Sem cartão. Sem cobrança automática. Você decide ao final.</span></div>
           <div className="landing-install-explainer"><Download size={16}/><span><strong>Quer o Clareia na tela inicial?</strong> Toque em <b>Instalar app</b>. No Android, confirme a instalação. No iPhone, siga <b>Compartilhar › Adicionar à Tela de Início</b>.</span></div>
         </div>
 
-        <div className="landing-product" aria-label="Exemplo ilustrativo do Clareia">
-          <div className="landing-product-top"><span className="landing-product-mark"><Sparkles size={16}/></span><div><strong>Seu assistente financeiro Clareia</strong><small>EXEMPLO ILUSTRATIVO</small></div><span className="landing-live-dot"/></div>
-          <div className="landing-voice-card"><div className="landing-voice-head"><span><Mic size={15}/> Um registro por voz</span><span className="landing-wave" aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/><i/></span></div><p>“Paguei R$ 48 no mercado com Pix.”</p><div className="landing-voice-result"><CheckCircle2 size={15}/><span>Você revisa e confirma antes de salvar</span></div></div>
-          <div className="landing-insight-card"><div><span className="landing-insight-icon"><Sparkles size={16}/></span><div><small>EXEMPLO DE RESPOSTA DO ASSISTENTE</small><strong>O que merece atenção este mês?</strong></div></div><p>Com base nos seus registros, a Central compara períodos e destaca mudanças que merecem atenção.</p><span className="landing-insight-link">Orientação com base nos seus dados <ArrowRight size={13}/></span></div>
-          <div className="landing-product-foot"><span><Wallet size={14}/> Pessoa física</span><span><Building2 size={14}/> MEI</span><small>acessos separados</small></div>
+        <div className="landing-product landing-intelligence-demo" aria-label="Demonstração interativa da Central de Inteligência Clareia">
+          <div className="landing-product-top"><span className="landing-product-mark"><Sparkles size={16}/></span><div><strong>Central de Inteligência</strong><small>ORIENTAÇÃO PARA O SEU PRÓXIMO PASSO</small></div><span className="landing-live-dot"/></div>
+          <p className="landing-demo-question">O que você quer entender?</p>
+          <div className="landing-demo-tabs" role="group" aria-label="Escolha uma demonstração">
+            <button type="button" className={demoView === 'budget' ? 'is-active' : ''} aria-pressed={demoView === 'budget'} onClick={() => setDemoView('budget')}><Target size={14}/>Meu orçamento</button>
+            <button type="button" className={demoView === 'margin' ? 'is-active' : ''} aria-pressed={demoView === 'margin'} onClick={() => setDemoView('margin')}><Wallet size={14}/>Quanto cabe?</button>
+            <button type="button" className={demoView === 'change' ? 'is-active' : ''} aria-pressed={demoView === 'change'} onClick={() => setDemoView('change')}><BarChart3 size={14}/>O que mudou?</button>
+          </div>
+          <div className="landing-demo-answer" key={demoView} aria-live="polite">
+            {demoView === 'budget' && <><div className="landing-demo-answer-head"><span>ALIMENTAÇÃO · NO MÊS</span><strong>80%</strong></div><div className="landing-demo-progress"><i style={{ width: '80%' }}/></div><div className="landing-demo-metric"><strong>R$ 180</strong><span>do limite ainda disponível</span></div><p>Você já usou boa parte do valor planejado. Acompanhe os próximos gastos para seguir dentro do orçamento.</p></>}
+            {demoView === 'margin' && <><div className="landing-demo-answer-head"><span>MARGEM ESTIMADA</span><Wallet size={16}/></div><div className="landing-demo-metric"><strong>Uma visão mais segura</strong></div><p>A Central considera seus registros, compromissos, metas e valor protegido para estimar o que ainda cabe antes da próxima entrada.</p></>}
+            {demoView === 'change' && <><div className="landing-demo-answer-head"><span>COMPARAÇÃO DE PERÍODOS</span><BarChart3 size={16}/></div><div className="landing-demo-compare"><span><small>PERÍODO ANTERIOR</small><strong>R$ 1.040</strong></span><ArrowRight size={17}/><span><small>PERÍODO ATUAL</small><strong>R$ 1.280</strong></span></div><p>Veja onde houve mudança e decida se algum gasto merece sua atenção.</p></>}
+          </div>
+          <div className="landing-demo-foot"><ShieldCheck size={14}/><span>Demonstração ilustrativa. A orientação usa os dados que você registra e revisa.</span></div>
+          <div className="landing-product-foot"><span><Mic size={14}/> Pergunte por voz ou texto</span><span><CheckCircle2 size={14}/> Você decide</span></div>
         </div>
       </section>
 
-      <section className="landing-offer" aria-label="Teste grátis"><div className="landing-offer-icon"><CheckCircle2 size={20}/></div><div><span>SEU PRIMEIRO PASSO, SEM COMPLICAÇÃO</span><strong>Comece pelo próximo gasto — não precisa organizar tudo de uma vez.</strong><p>Registre aos poucos, acompanhe suas contas e veja o mês ganhar forma. São 7 dias grátis, sem cartão; depois, você decide se quer assinar.</p></div><button type="button" onClick={() => startTrial()}>Quero começar grátis <ArrowRight size={16}/></button></section>
+      <section className="landing-offer" aria-label="Teste grátis"><div className="landing-offer-icon"><CheckCircle2 size={20}/></div><div><span>SEU PRIMEIRO PASSO, SEM COMPLICAÇÃO</span><strong>Comece pelo próximo gasto — e deixe a Central te orientar.</strong><p>Registre aos poucos. Acompanhe o que cabe no seu plano e identifique oportunidades para guardar, com 7 dias grátis e sem cartão.</p></div><button type="button" onClick={() => startTrial()}>Quero começar grátis <ArrowRight size={16}/></button></section>
+
+      <section className="landing-intelligence-band" aria-labelledby="landing-intelligence-title">
+        <div className="landing-intelligence-glow" aria-hidden="true" />
+        <div className="landing-intelligence-copy"><span className="landing-eyebrow"><Sparkles size={14}/> MAIS QUE UM REGISTRO: UMA ORIENTAÇÃO PARA DECIDIR</span><h2 id="landing-intelligence-title">A Central te ajuda a manter os pés no chão e os planos em movimento.</h2><p>Quando você acompanha entradas, contas, metas e gastos, fica mais fácil perceber o que está dentro do esperado — e ajustar a rota antes que o mês aperte.</p><button type="button" onClick={() => startTrial()}>Quero descobrir meu ritmo financeiro <ArrowRight size={16}/></button></div>
+        <div className="landing-intelligence-steps"><article><span>01</span><div><strong>Entenda seu ponto de partida</strong><p>Organize o que entra, o que sai e o que já está comprometido.</p></div></article><article><span>02</span><div><strong>Receba sinais claros</strong><p>Veja limites, mudanças e compromissos que merecem atenção.</p></div></article><article><span>03</span><div><strong>Escolha o próximo passo</strong><p>Acompanhe seu plano, ajuste um gasto ou avance numa meta de economia.</p></div></article></div>
+      </section>
 
       <section id="como-funciona" className="landing-section landing-how">
         <div className="landing-section-heading"><span className="landing-eyebrow">MENOS SURPRESA NO FIM DO MÊS</span><h2>Mais clareza para decidir. Menos coisas para lembrar.</h2><p>O Clareia ajuda com passos simples: registre, confira e acompanhe. Seus dados continuam sob sua revisão.</p></div>
