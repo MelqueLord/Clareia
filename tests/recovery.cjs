@@ -165,7 +165,7 @@ test('mensagem escapa HTML e usa idempotência sem colocar token no cabeçalho',
   assert.equal(await ctx.email.sendRecoveryEmail({ ...input, resetUrl: 'https://clareia.test/redefinir-senha?token=another-token' }), true);
   const [first, second, third] = ctx.sent;
   assert.equal(first.url, 'https://api.resend.com/emails');
-  assert.equal(first.options.redirect, 'error');
+  assert.equal(first.options.redirect, 'manual');
   assert.ok(first.options.signal instanceof AbortSignal);
   assert.deepEqual(first.body.to, ['owner@example.test']);
   assert.equal(first.body.reply_to, 'suporte@example.test');

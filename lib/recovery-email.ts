@@ -52,7 +52,10 @@ export async function sendRecoveryEmail({ email, name, resetUrl }: { email: stri
         from, to: [email], subject: 'Redefina sua senha do Clareia', text, html,
         ...(replyTo ? { reply_to: replyTo } : {}),
       }),
-      redirect: 'error',
+      // Cloudflare Workers does not implement redirect: 'error'. Manual keeps
+      // the Authorization header from being forwarded and 3xx responses fail
+      // the response.ok check below without following another destination.
+      redirect: 'manual',
       signal: AbortSignal.timeout(8_000),
     });
     if (!response.ok) {
