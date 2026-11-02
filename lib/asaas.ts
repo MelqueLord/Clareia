@@ -30,7 +30,11 @@ function baseUrl() {
 }
 
 export function asaasConfigured() {
-  return Boolean(env.ASAAS_API_KEY?.trim() && env.ASAAS_WEBHOOK_TOKEN?.trim());
+  return Boolean(
+    env.ASAAS_BILLING_ENABLED?.trim().toLowerCase() === 'true' &&
+    env.ASAAS_API_KEY?.trim() &&
+    env.ASAAS_WEBHOOK_TOKEN?.trim(),
+  );
 }
 
 export function asaasPriceCents(space: 'pf' | 'mei') {

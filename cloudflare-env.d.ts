@@ -18,6 +18,7 @@ declare namespace Cloudflare {
     RESEND_REPLY_TO?: string;
     ASAAS_API_KEY?: string;
     ASAAS_ENVIRONMENT?: string;
+    ASAAS_BILLING_ENABLED?: string;
     ASAAS_WEBHOOK_TOKEN?: string;
     ASAAS_RETURN_URL?: string;
     ASAAS_PF_PRICE_CENTS?: string;
