@@ -6,9 +6,11 @@ type AsaasSubscription = { id: string; customer: string; status?: string };
 export type AsaasPayment = {
   id: string;
   status: string;
+  billingType?: string | null;
   invoiceUrl?: string | null;
   subscription?: string | null;
   externalReference?: string | null;
+  value?: number | null;
   dueDate?: string | null;
 };
 

@@ -76,9 +76,9 @@ export async function POST(req: Request) {
       const checkoutUrl = safeAsaasInvoiceUrl(payment?.invoiceUrl);
       await env.DB.prepare(`
         UPDATE account_access
-        SET provider_customer_id=?,provider_subscription_id=?,provider_payment_id=?,subscription_requested_at=?,updated_at=?
+        SET provider_customer_id=?,provider_subscription_id=?,subscription_requested_at=?,updated_at=?
         WHERE user_id=?
-      `).bind(customer.id, subscription.id, payment?.id || null, requestedAt, requestedAt, user.authUserId!).run();
+      `).bind(customer.id, subscription.id, requestedAt, requestedAt, user.authUserId!).run();
       if (!checkoutUrl) return reply({ error: 'A assinatura foi criada, mas a página de pagamento ainda está sendo preparada. Tente novamente em instantes.' }, 503);
       return reply({ ok: true, requestedAt, mode: 'asaas', checkoutUrl });
     } finally {

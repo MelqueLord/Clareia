@@ -46,25 +46,32 @@ export async function POST(req: Request) {
 
   if (!account) return reply({ ok: true, matched: false });
 
-  const paidEvents = new Set(['PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED']);
   const overdueEvents = new Set(['PAYMENT_OVERDUE']);
   const canceledEvents = new Set(['PAYMENT_REFUNDED', 'PAYMENT_CHARGEBACK_REQUESTED', 'PAYMENT_CHARGEBACK_DISPUTE', 'PAYMENT_DELETED']);
   const subscriptionCanceledEvents = new Set(['SUBSCRIPTION_DELETED', 'SUBSCRIPTION_INACTIVATED']);
 
-  if (paidEvents.has(payload.event)) {
+  // A card payment may emit PAYMENT_CONFIRMED and PAYMENT_RECEIVED as separate
+  // events. A PIX confirmation can be provisional, so activate PIX only when
+  // Asaas reports it as received. Keep the payment ID as the last grant to
+  // avoid extending one billing cycle twice for those two card events.
+  const paymentIsPaid = Boolean(paymentId) && (
+    payload.event === 'PAYMENT_RECEIVED' ||
+    (payload.event === 'PAYMENT_CONFIRMED' && payload.payment?.billingType !== 'PIX')
+  );
+  if (paymentIsPaid) {
     await env.DB.prepare(`
       UPDATE account_access
       SET status='active',billing_period_ends_at=MAX(COALESCE(billing_period_ends_at,0),?),provider_payment_id=?,subscription_requested_at=NULL,updated_at=?
-      WHERE user_id=?
-    `).bind(paidUntil(now), paymentId, now, account.user_id).run();
+      WHERE user_id=? AND (provider_payment_id IS NULL OR provider_payment_id<>?)
+    `).bind(paidUntil(now), paymentId, now, account.user_id, paymentId).run();
   } else if (overdueEvents.has(payload.event)) {
     await env.DB.prepare(`
-      UPDATE account_access SET status='past_due',provider_payment_id=?,updated_at=?
+      UPDATE account_access SET status='past_due',updated_at=?
       WHERE user_id=? AND (billing_period_ends_at IS NULL OR billing_period_ends_at<=?)
-    `).bind(paymentId, now, account.user_id, now).run();
+    `).bind(now, account.user_id, now).run();
   } else if (canceledEvents.has(payload.event) || subscriptionCanceledEvents.has(payload.event)) {
-    await env.DB.prepare("UPDATE account_access SET status='canceled',provider_payment_id=?,updated_at=? WHERE user_id=?")
-      .bind(paymentId, now, account.user_id).run();
+    await env.DB.prepare("UPDATE account_access SET status='canceled',updated_at=? WHERE user_id=?")
+      .bind(now, account.user_id).run();
   }
 
   await env.DB.prepare('UPDATE billing_events SET processed_at=? WHERE id=?').bind(now, payload.id).run();
